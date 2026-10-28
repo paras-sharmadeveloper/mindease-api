@@ -46,5 +46,5 @@ php artisan mindease:import-content
 - `HASH_DRIVER=argon2id` set **before** the first user is created.
 - Back up `APP_KEY`. Questionnaire and journal answers are encrypted with it; losing it makes them unreadable. Rotate with `APP_PREVIOUS_KEYS`.
 - Mail via SES (Sydney) for password reset. Run a queue worker and the scheduler (`schedule:run` every minute).
-- Create the first web-panel admin: `php artisan mindease:create-admin you@example.com` (asks for the password). Demo users are seeded only locally.
+- Create the first web-panel admin: set `MINDEASE_ADMIN_EMAIL` / `MINDEASE_ADMIN_PASSWORD` in `.env` and run `php artisan db:seed --class=AdminSeeder --force`, or run `php artisan mindease:create-admin you@example.com` (asks for the password). Demo users are seeded only locally.
 - Never add request-body logging, Telescope or analytics that capture `answers`.

@@ -44,6 +44,12 @@ return [
         'join_opens_minutes_before' => (int) env('MINDEASE_JOIN_OPENS_MINUTES_BEFORE', 10),
     ],
 
+    // First web-panel admin on a server (database/seeders/AdminSeeder.php). Password only in the server .env.
+    'admin' => [
+        'email' => env('MINDEASE_ADMIN_EMAIL', 'admin@mindease.me'),
+        'password' => env('MINDEASE_ADMIN_PASSWORD'),
+    ],
+
     // Developer portal at /developers (guides, reference, "Try it" console). Off in production unless enabled.
     'developer_docs' => (bool) env('MINDEASE_DEVELOPER_DOCS', env('APP_ENV') !== 'production'),
 

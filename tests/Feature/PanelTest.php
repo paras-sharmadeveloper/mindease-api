@@ -223,4 +223,20 @@ class PanelTest extends ApiTestCase
             ->assertSuccessful();
         $this->assertTrue($this->therapistUser->refresh()->isAdmin());
     }
+
+    public function test_admin_seeder_reads_password_from_config_and_never_resets_it(): void
+    {
+        config(['mindease.admin' => ['email' => 'Boss@Example.com', 'password' => null]]);
+        $this->seed(\Database\Seeders\AdminSeeder::class);
+        $this->assertFalse(User::where('email', 'boss@example.com')->exists());
+
+        config(['mindease.admin.password' => 'first-password']);
+        $this->seed(\Database\Seeders\AdminSeeder::class);
+        $admin = User::where('email', 'boss@example.com')->firstOrFail();
+        $this->assertTrue($admin->isAdmin());
+
+        config(['mindease.admin.password' => 'other-password']);
+        $this->seed(\Database\Seeders\AdminSeeder::class);
+        $this->assertTrue(password_verify('first-password', $admin->refresh()->password));
+    }
 }

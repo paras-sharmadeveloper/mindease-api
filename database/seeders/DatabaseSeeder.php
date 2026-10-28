@@ -15,6 +15,10 @@ class DatabaseSeeder extends Seeder
             $this->command?->info("Imported {$line}");
         }
 
+        if (! app()->environment('local')) {
+            $this->call(AdminSeeder::class);
+        }
+
         if (app()->environment('local')) {
             User::firstOrCreate(
                 ['email' => 'demo@mindease.test'],
