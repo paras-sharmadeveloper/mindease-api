@@ -41,9 +41,12 @@ fi
 $PHP -r 'defined("PASSWORD_ARGON2ID") or exit(1);' || { echo "php8.4 has no Argon2id"; exit 1; }
 systemctl enable --now php8.4-fpm
 
-log "Composer"
-if ! command -v composer >/dev/null; then
-  curl -sS https://getcomposer.org/installer | $PHP -- --install-dir=/usr/local/bin --filename=composer
+log "Composer (dedicated copy, always run with PHP 8.4)"
+# The server may already have a system composer that runs on an older PHP. Use our own.
+if [ ! -f /usr/local/bin/composer84 ]; then
+  $PHP -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');"
+  $PHP /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer84
+  rm -f /tmp/composer-setup.php
 fi
 
 log "Database (existing MySQL)"
@@ -123,7 +126,7 @@ ENV
 fi
 
 log "Install app"
-COMPOSER_ALLOW_SUPERUSER=1 $PHP "$(command -v composer)" install --no-dev --optimize-autoloader --no-interaction
+COMPOSER_ALLOW_SUPERUSER=1 $PHP /usr/local/bin/composer84 install --no-dev --optimize-autoloader --no-interaction
 grep -q '^APP_KEY=base64' .env || $PHP artisan key:generate --force
 chown -R root:www-data "$APP_DIR"
 chmod 640 .env

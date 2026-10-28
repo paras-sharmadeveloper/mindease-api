@@ -9,7 +9,7 @@ git pull --ff-only
 $PHP artisan down --retry=15 || true
 trap '$PHP artisan up' EXIT
 
-COMPOSER_ALLOW_SUPERUSER=1 $PHP "$(command -v composer)" install --no-dev --optimize-autoloader --no-interaction
+COMPOSER_ALLOW_SUPERUSER=1 $PHP /usr/local/bin/composer84 install --no-dev --optimize-autoloader --no-interaction
 chown -R root:www-data "$APP_DIR"
 $PHP artisan migrate --force
 $PHP artisan optimize
