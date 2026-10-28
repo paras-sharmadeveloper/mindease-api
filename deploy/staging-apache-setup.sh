@@ -123,7 +123,7 @@ ENV
 fi
 
 log "Install app"
-COMPOSER_ALLOW_SUPERUSER=1 $PHP /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction
+COMPOSER_ALLOW_SUPERUSER=1 $PHP "$(command -v composer)" install --no-dev --optimize-autoloader --no-interaction
 grep -q '^APP_KEY=base64' .env || $PHP artisan key:generate --force
 chown -R root:www-data "$APP_DIR"
 chmod 640 .env
