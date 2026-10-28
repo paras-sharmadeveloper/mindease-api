@@ -56,6 +56,7 @@ php artisan migrate:fresh --seed     # local reset (imports sample content, demo
 php artisan test                     # all tests
 php artisan test --filter=Progress
 php artisan mindease:import-content [path] [--force]
+php artisan mindease:create-admin you@example.com   # first web-panel admin on a server (password asked hidden)
 ```
 
 ## Status (v1 core)

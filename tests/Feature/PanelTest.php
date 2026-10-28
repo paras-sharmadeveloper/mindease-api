@@ -204,4 +204,23 @@ class PanelTest extends ApiTestCase
             ->assertUnprocessable()->assertJsonPath('error.field', 'currentPassword');
         $this->putJson('/v1/panel/me/password', ['currentPassword' => 'old-password', 'password' => 'new-password'])->assertNoContent();
     }
+
+    public function test_create_admin_command(): void
+    {
+        $this->artisan('mindease:create-admin', ['email' => 'Owner@Example.com', '--name' => 'Owner'])
+            ->expectsQuestion('Password (at least 8 characters)', 'long-enough-pass')
+            ->expectsQuestion('Repeat password', 'long-enough-pass')
+            ->assertSuccessful();
+        $this->assertSame('admin', User::where('email', 'owner@example.com')->value('role'));
+
+        $this->artisan('mindease:create-admin', ['email' => 'short@example.com', '--name' => 'X'])
+            ->expectsQuestion('Password (at least 8 characters)', 'short')
+            ->expectsQuestion('Repeat password', 'short')
+            ->assertFailed();
+
+        $this->artisan('mindease:create-admin', ['email' => $this->therapistUser->email])
+            ->expectsConfirmation("{$this->therapistUser->email} exists with role \"therapist\". Make it an admin?", 'yes')
+            ->assertSuccessful();
+        $this->assertTrue($this->therapistUser->refresh()->isAdmin());
+    }
 }
