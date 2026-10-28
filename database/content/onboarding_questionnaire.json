@@ -1,0 +1,179 @@
+{
+  "version": "0.0.1-sample",
+  "note": "SAMPLE - replace with the app's assets/content/onboarding_questionnaire.json",
+  "questions": [
+    {
+      "id": "goals",
+      "type": "multi",
+      "q": "What would you like help with?",
+      "options": [
+        {
+          "v": "stress",
+          "label": "Managing stress"
+        },
+        {
+          "v": "sleep",
+          "label": "Better sleep"
+        },
+        {
+          "v": "mood",
+          "label": "Understanding my mood"
+        }
+      ]
+    },
+    {
+      "id": "mood",
+      "type": "mood",
+      "q": "How have you been feeling lately?",
+      "options": [
+        {
+          "v": "very_low",
+          "label": "Very low"
+        },
+        {
+          "v": "low",
+          "label": "Low"
+        },
+        {
+          "v": "okay",
+          "label": "Okay"
+        },
+        {
+          "v": "good",
+          "label": "Good"
+        },
+        {
+          "v": "great",
+          "label": "Great"
+        }
+      ]
+    },
+    {
+      "id": "stress",
+      "type": "single",
+      "q": "How stressed do you feel?",
+      "options": [
+        {
+          "v": "low",
+          "label": "A little"
+        },
+        {
+          "v": "medium",
+          "label": "Quite a bit"
+        },
+        {
+          "v": "overwhelming",
+          "label": "Overwhelming"
+        }
+      ]
+    },
+    {
+      "id": "sleep",
+      "type": "single",
+      "q": "How are you sleeping?",
+      "options": [
+        {
+          "v": "well",
+          "label": "Well"
+        },
+        {
+          "v": "poorly",
+          "label": "Poorly"
+        }
+      ]
+    },
+    {
+      "id": "physical",
+      "type": "multi",
+      "q": "Have you noticed any of these?",
+      "options": [
+        {
+          "v": "headaches",
+          "label": "Headaches"
+        },
+        {
+          "v": "tension",
+          "label": "Tension"
+        },
+        {
+          "v": "none",
+          "label": "None of these"
+        }
+      ],
+      "exclusive": "none"
+    },
+    {
+      "id": "talking",
+      "type": "single",
+      "q": "How easy is it to talk about how you feel?",
+      "options": [
+        {
+          "v": "easy",
+          "label": "Easy"
+        },
+        {
+          "v": "hard",
+          "label": "Hard"
+        }
+      ]
+    },
+    {
+      "id": "support",
+      "type": "multi",
+      "q": "Who can you talk to?",
+      "options": [
+        {
+          "v": "family",
+          "label": "Family"
+        },
+        {
+          "v": "friends",
+          "label": "Friends"
+        },
+        {
+          "v": "no_one",
+          "label": "No one right now"
+        }
+      ],
+      "exclusive": "no_one"
+    },
+    {
+      "id": "learning",
+      "type": "single",
+      "q": "How do you like to learn?",
+      "options": [
+        {
+          "v": "reading",
+          "label": "Reading"
+        },
+        {
+          "v": "videos",
+          "label": "Short videos"
+        },
+        {
+          "v": "doing",
+          "label": "Doing activities"
+        }
+      ]
+    },
+    {
+      "id": "time",
+      "type": "single",
+      "q": "How much time can you give each day?",
+      "options": [
+        {
+          "v": "5",
+          "label": "5 minutes"
+        },
+        {
+          "v": "15",
+          "label": "15 minutes"
+        },
+        {
+          "v": "30",
+          "label": "30 minutes"
+        }
+      ]
+    }
+  ]
+}

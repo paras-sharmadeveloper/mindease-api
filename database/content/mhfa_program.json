@@ -1,0 +1,758 @@
+{
+  "id": "mhfa",
+  "title": "SAMPLE - MHFA Self-Reflection Program",
+  "short": "Placeholder program for API testing",
+  "intro": "Replace this file with the app's real mhfa_program.json.",
+  "learn": [
+    "Placeholder"
+  ],
+  "disclaimer": "This is not an accredited course.",
+  "contentVersion": "0.0.1-sample",
+  "displayOrder": 1,
+  "phases": [
+    {
+      "id": "p1",
+      "number": 1,
+      "title": "SAMPLE - Noticing how you feel",
+      "description": "Placeholder phase. Replace with the app's assets/content/mhfa_program.json.",
+      "objectives": [
+        "Placeholder objective"
+      ],
+      "color": "#9BB068",
+      "pointsAwarded": null,
+      "lessons": [
+        {
+          "id": "p1l1",
+          "title": "Sample lesson 1",
+          "minutes": 4,
+          "intro": "Placeholder.",
+          "sections": [
+            {
+              "h": "Heading",
+              "p": [
+                "Placeholder paragraph."
+              ],
+              "list": [
+                "Point"
+              ]
+            }
+          ],
+          "example": "Placeholder.",
+          "takeaway": "Placeholder."
+        },
+        {
+          "id": "p1l2",
+          "title": "Sample lesson 2",
+          "minutes": 4,
+          "intro": "Placeholder.",
+          "sections": [
+            {
+              "h": "Heading",
+              "p": [
+                "Placeholder paragraph."
+              ],
+              "list": [
+                "Point"
+              ]
+            }
+          ],
+          "example": "Placeholder.",
+          "takeaway": "Placeholder."
+        },
+        {
+          "id": "p1l3",
+          "title": "Sample lesson 3",
+          "minutes": 4,
+          "intro": "Placeholder.",
+          "sections": [
+            {
+              "h": "Heading",
+              "p": [
+                "Placeholder paragraph."
+              ],
+              "list": [
+                "Point"
+              ]
+            }
+          ],
+          "example": "Placeholder.",
+          "takeaway": "Placeholder."
+        }
+      ],
+      "videos": [
+        {
+          "id": "p1v1",
+          "title": "Sample video 1",
+          "description": "Placeholder.",
+          "duration": 70,
+          "mediaUrl": null,
+          "thumbnailUrl": null
+        },
+        {
+          "id": "p1v2",
+          "title": "Sample video 2",
+          "description": "Placeholder.",
+          "duration": 80,
+          "mediaUrl": null,
+          "thumbnailUrl": null
+        },
+        {
+          "id": "p1v3",
+          "title": "Sample video 3",
+          "description": "Placeholder.",
+          "duration": 90,
+          "mediaUrl": null,
+          "thumbnailUrl": null
+        }
+      ],
+      "activity": {
+        "id": "p1a",
+        "title": "Sample activity",
+        "purpose": "Placeholder.",
+        "instructions": "Placeholder.",
+        "prompts": [
+          {
+            "id": "q1",
+            "q": "Placeholder question 1?",
+            "chips": [
+              "calm",
+              "tired"
+            ],
+            "optional": true
+          },
+          {
+            "id": "q2",
+            "q": "Placeholder question 2?",
+            "chips": [],
+            "optional": true
+          }
+        ]
+      },
+      "quiz": {
+        "id": "p1q",
+        "passThreshold": null,
+        "questions": [
+          {
+            "id": "p1q-1",
+            "type": "mc",
+            "q": "Sample question 1",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": 1,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p1q-2",
+            "type": "tf",
+            "q": "Sample question 2",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": 0,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p1q-3",
+            "type": "mc",
+            "q": "Sample question 3",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": 1,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p1q-4",
+            "type": "tf",
+            "q": "Sample question 4",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": 0,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p1q-5",
+            "type": "mc",
+            "q": "Sample question 5",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": 1,
+            "explain": "Placeholder."
+          }
+        ]
+      }
+    },
+    {
+      "id": "p2",
+      "number": 2,
+      "title": "SAMPLE - Understanding stress",
+      "description": "Placeholder phase. Replace with the app's assets/content/mhfa_program.json.",
+      "objectives": [
+        "Placeholder objective"
+      ],
+      "color": "#ED7E1C",
+      "pointsAwarded": null,
+      "lessons": [
+        {
+          "id": "p2l1",
+          "title": "Sample lesson 1",
+          "minutes": 4,
+          "intro": "Placeholder.",
+          "sections": [
+            {
+              "h": "Heading",
+              "p": [
+                "Placeholder paragraph."
+              ],
+              "list": [
+                "Point"
+              ]
+            }
+          ],
+          "example": "Placeholder.",
+          "takeaway": "Placeholder."
+        },
+        {
+          "id": "p2l2",
+          "title": "Sample lesson 2",
+          "minutes": 4,
+          "intro": "Placeholder.",
+          "sections": [
+            {
+              "h": "Heading",
+              "p": [
+                "Placeholder paragraph."
+              ],
+              "list": [
+                "Point"
+              ]
+            }
+          ],
+          "example": "Placeholder.",
+          "takeaway": "Placeholder."
+        },
+        {
+          "id": "p2l3",
+          "title": "Sample lesson 3",
+          "minutes": 4,
+          "intro": "Placeholder.",
+          "sections": [
+            {
+              "h": "Heading",
+              "p": [
+                "Placeholder paragraph."
+              ],
+              "list": [
+                "Point"
+              ]
+            }
+          ],
+          "example": "Placeholder.",
+          "takeaway": "Placeholder."
+        }
+      ],
+      "videos": [
+        {
+          "id": "p2v1",
+          "title": "Sample video 1",
+          "description": "Placeholder.",
+          "duration": 70,
+          "mediaUrl": null,
+          "thumbnailUrl": null
+        },
+        {
+          "id": "p2v2",
+          "title": "Sample video 2",
+          "description": "Placeholder.",
+          "duration": 80,
+          "mediaUrl": null,
+          "thumbnailUrl": null
+        },
+        {
+          "id": "p2v3",
+          "title": "Sample video 3",
+          "description": "Placeholder.",
+          "duration": 90,
+          "mediaUrl": null,
+          "thumbnailUrl": null
+        }
+      ],
+      "activity": {
+        "id": "p2a",
+        "title": "Sample activity",
+        "purpose": "Placeholder.",
+        "instructions": "Placeholder.",
+        "prompts": [
+          {
+            "id": "q1",
+            "q": "Placeholder question 1?",
+            "chips": [
+              "calm",
+              "tired"
+            ],
+            "optional": true
+          },
+          {
+            "id": "q2",
+            "q": "Placeholder question 2?",
+            "chips": [],
+            "optional": true
+          }
+        ]
+      },
+      "quiz": {
+        "id": "p2q",
+        "passThreshold": null,
+        "questions": [
+          {
+            "id": "p2q-1",
+            "type": "mc",
+            "q": "Sample question 1",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": 1,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p2q-2",
+            "type": "tf",
+            "q": "Sample question 2",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": 0,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p2q-3",
+            "type": "mc",
+            "q": "Sample question 3",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": 1,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p2q-4",
+            "type": "tf",
+            "q": "Sample question 4",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": 0,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p2q-5",
+            "type": "mc",
+            "q": "Sample question 5",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": 1,
+            "explain": "Placeholder."
+          }
+        ]
+      }
+    },
+    {
+      "id": "p3",
+      "number": 3,
+      "title": "SAMPLE - Reaching out",
+      "description": "Placeholder phase. Replace with the app's assets/content/mhfa_program.json.",
+      "objectives": [
+        "Placeholder objective"
+      ],
+      "color": "#A694F5",
+      "pointsAwarded": null,
+      "lessons": [
+        {
+          "id": "p3l1",
+          "title": "Sample lesson 1",
+          "minutes": 4,
+          "intro": "Placeholder.",
+          "sections": [
+            {
+              "h": "Heading",
+              "p": [
+                "Placeholder paragraph."
+              ],
+              "list": [
+                "Point"
+              ]
+            }
+          ],
+          "example": "Placeholder.",
+          "takeaway": "Placeholder."
+        },
+        {
+          "id": "p3l2",
+          "title": "Sample lesson 2",
+          "minutes": 4,
+          "intro": "Placeholder.",
+          "sections": [
+            {
+              "h": "Heading",
+              "p": [
+                "Placeholder paragraph."
+              ],
+              "list": [
+                "Point"
+              ]
+            }
+          ],
+          "example": "Placeholder.",
+          "takeaway": "Placeholder."
+        },
+        {
+          "id": "p3l3",
+          "title": "Sample lesson 3",
+          "minutes": 4,
+          "intro": "Placeholder.",
+          "sections": [
+            {
+              "h": "Heading",
+              "p": [
+                "Placeholder paragraph."
+              ],
+              "list": [
+                "Point"
+              ]
+            }
+          ],
+          "example": "Placeholder.",
+          "takeaway": "Placeholder."
+        }
+      ],
+      "videos": [
+        {
+          "id": "p3v1",
+          "title": "Sample video 1",
+          "description": "Placeholder.",
+          "duration": 70,
+          "mediaUrl": null,
+          "thumbnailUrl": null
+        },
+        {
+          "id": "p3v2",
+          "title": "Sample video 2",
+          "description": "Placeholder.",
+          "duration": 80,
+          "mediaUrl": null,
+          "thumbnailUrl": null
+        },
+        {
+          "id": "p3v3",
+          "title": "Sample video 3",
+          "description": "Placeholder.",
+          "duration": 90,
+          "mediaUrl": null,
+          "thumbnailUrl": null
+        }
+      ],
+      "activity": {
+        "id": "p3a",
+        "title": "Sample activity",
+        "purpose": "Placeholder.",
+        "instructions": "Placeholder.",
+        "prompts": [
+          {
+            "id": "q1",
+            "q": "Placeholder question 1?",
+            "chips": [
+              "calm",
+              "tired"
+            ],
+            "optional": true
+          },
+          {
+            "id": "q2",
+            "q": "Placeholder question 2?",
+            "chips": [],
+            "optional": true
+          }
+        ]
+      },
+      "quiz": {
+        "id": "p3q",
+        "passThreshold": null,
+        "questions": [
+          {
+            "id": "p3q-1",
+            "type": "mc",
+            "q": "Sample question 1",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": 1,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p3q-2",
+            "type": "tf",
+            "q": "Sample question 2",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": 0,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p3q-3",
+            "type": "mc",
+            "q": "Sample question 3",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": 1,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p3q-4",
+            "type": "tf",
+            "q": "Sample question 4",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": 0,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p3q-5",
+            "type": "mc",
+            "q": "Sample question 5",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": 1,
+            "explain": "Placeholder."
+          }
+        ]
+      }
+    },
+    {
+      "id": "p4",
+      "number": 4,
+      "title": "SAMPLE - Supporting someone else",
+      "description": "Placeholder phase. Replace with the app's assets/content/mhfa_program.json.",
+      "objectives": [
+        "Placeholder objective"
+      ],
+      "color": "#D64938",
+      "pointsAwarded": null,
+      "lessons": [
+        {
+          "id": "p4l1",
+          "title": "Sample lesson 1",
+          "minutes": 4,
+          "intro": "Placeholder.",
+          "sections": [
+            {
+              "h": "Heading",
+              "p": [
+                "Placeholder paragraph."
+              ],
+              "list": [
+                "Point"
+              ]
+            }
+          ],
+          "example": "Placeholder.",
+          "takeaway": "Placeholder."
+        },
+        {
+          "id": "p4l2",
+          "title": "Sample lesson 2",
+          "minutes": 4,
+          "intro": "Placeholder.",
+          "sections": [
+            {
+              "h": "Heading",
+              "p": [
+                "Placeholder paragraph."
+              ],
+              "list": [
+                "Point"
+              ]
+            }
+          ],
+          "example": "Placeholder.",
+          "takeaway": "Placeholder."
+        },
+        {
+          "id": "p4l3",
+          "title": "Sample lesson 3",
+          "minutes": 4,
+          "intro": "Placeholder.",
+          "sections": [
+            {
+              "h": "Heading",
+              "p": [
+                "Placeholder paragraph."
+              ],
+              "list": [
+                "Point"
+              ]
+            }
+          ],
+          "example": "Placeholder.",
+          "takeaway": "Placeholder."
+        }
+      ],
+      "videos": [
+        {
+          "id": "p4v1",
+          "title": "Sample video 1",
+          "description": "Placeholder.",
+          "duration": 70,
+          "mediaUrl": null,
+          "thumbnailUrl": null
+        },
+        {
+          "id": "p4v2",
+          "title": "Sample video 2",
+          "description": "Placeholder.",
+          "duration": 80,
+          "mediaUrl": null,
+          "thumbnailUrl": null
+        },
+        {
+          "id": "p4v3",
+          "title": "Sample video 3",
+          "description": "Placeholder.",
+          "duration": 90,
+          "mediaUrl": null,
+          "thumbnailUrl": null
+        }
+      ],
+      "activity": {
+        "id": "p4a",
+        "title": "Sample activity",
+        "purpose": "Placeholder.",
+        "instructions": "Placeholder.",
+        "prompts": [
+          {
+            "id": "q1",
+            "q": "Placeholder question 1?",
+            "chips": [
+              "calm",
+              "tired"
+            ],
+            "optional": true
+          },
+          {
+            "id": "q2",
+            "q": "Placeholder question 2?",
+            "chips": [],
+            "optional": true
+          }
+        ]
+      },
+      "quiz": {
+        "id": "p4q",
+        "passThreshold": null,
+        "questions": [
+          {
+            "id": "p4q-1",
+            "type": "mc",
+            "q": "Sample question 1",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": 1,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p4q-2",
+            "type": "tf",
+            "q": "Sample question 2",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": 0,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p4q-3",
+            "type": "mc",
+            "q": "Sample question 3",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": 1,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p4q-4",
+            "type": "tf",
+            "q": "Sample question 4",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": 0,
+            "explain": "Placeholder."
+          },
+          {
+            "id": "p4q-5",
+            "type": "mc",
+            "q": "Sample question 5",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": 1,
+            "explain": "Placeholder."
+          }
+        ]
+      }
+    }
+  ]
+}
