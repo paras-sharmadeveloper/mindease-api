@@ -21,6 +21,18 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasUuids, Notifiable;
 
+    // users.role. Set only by seeders and the admin panel; never mass-assignable.
+    public const ROLE_USER = 'user';
+
+    public const ROLE_THERAPIST = 'therapist';
+
+    public const ROLE_ADMIN = 'admin';
+
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
     protected function casts(): array
     {
         return [

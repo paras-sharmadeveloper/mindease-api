@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\PointsController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\TherapistController;
+use App\Http\Controllers\Panel;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -61,4 +62,29 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('me/bookings/{bookingId}', [BookingController::class, 'show']);
     Route::post('me/bookings/{bookingId}/cancel', [BookingController::class, 'cancel']);
     Route::post('me/bookings/{bookingId}/video-token', [BookingController::class, 'videoToken']);
+});
+
+// ---- Web panel (therapists + admins). Same tokens as the app; role-gated. ----------------
+Route::middleware(['auth:sanctum', 'throttle:api', 'role:admin,therapist'])->prefix('panel')->group(function () {
+    Route::get('me', [Panel\AccountController::class, 'me']);
+    Route::put('me/password', [Panel\AccountController::class, 'password']);
+    Route::get('dashboard', Panel\DashboardController::class);
+
+    Route::get('therapists/{therapistId}', [Panel\TherapistController::class, 'show']);
+    Route::patch('therapists/{therapistId}', [Panel\TherapistController::class, 'update']);
+    Route::get('therapists/{therapistId}/availability', [Panel\AvailabilityController::class, 'show']);
+    Route::put('therapists/{therapistId}/availability', [Panel\AvailabilityController::class, 'update']);
+    Route::post('therapists/{therapistId}/exceptions', [Panel\AvailabilityController::class, 'storeException']);
+    Route::delete('therapists/{therapistId}/exceptions/{exceptionId}', [Panel\AvailabilityController::class, 'destroyException'])->whereNumber('exceptionId');
+
+    Route::get('bookings', [Panel\BookingController::class, 'index']);
+    Route::get('bookings/{bookingId}', [Panel\BookingController::class, 'show']);
+    Route::post('bookings/{bookingId}/cancel', [Panel\BookingController::class, 'cancel']);
+    Route::post('bookings/{bookingId}/outcome', [Panel\BookingController::class, 'outcome']);
+    Route::post('bookings/{bookingId}/video-token', [Panel\BookingController::class, 'videoToken']);
+
+    Route::middleware('role:admin')->group(function () {
+        Route::get('therapists', [Panel\TherapistController::class, 'index']);
+        Route::post('therapists', [Panel\TherapistController::class, 'store']);
+    });
 });

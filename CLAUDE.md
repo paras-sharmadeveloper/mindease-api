@@ -72,7 +72,8 @@ Open items:
 ## Phase 2: therapist booking + web panel
 
 **Built:** mobile booking API (therapists, slots, bookings, cancel + refunds, Stripe webhook, video token), `mindease:expire-booking-holds` (scheduled every minute), `users.role`, demo therapist seed, `tests/Feature/BookingTest.php`.
-**Not built yet:** `/panel` (therapist/admin web UI, therapist host token, mark completed/no-show, availability editing), therapist payouts, booking emails/reminders. Booking confirms only from the webhook: never add a client-side confirm path.
+**Web panel (built):** React SPA in `../mindease-web` (not inside Laravel). API: `/v1/panel/*` in `routes/api.php`, `app/Http/Controllers/Panel/`, shapes in `app/Services/Booking/PanelPresenter.php`, tests `tests/Feature/PanelTest.php`. Same Sanctum + rotating refresh tokens as the app, gated by `role:admin,therapist` (`EnsureRole`). Admin: therapist CRUD (temporary password, price, active), all bookings, no client notes, no video join. Therapist: own profile/hours/time off/bookings, host video token, completed/no-show, cancel = full refund (`cancel_reason: therapist`). CORS origins: `CORS_ALLOWED_ORIGINS`.
+**Not built yet:** therapist payouts, booking emails/reminders, admin managing other admins. A therapist who has bookings can't use `DELETE /me` (bookings restrict-on-delete): deactivate them instead. Booking confirms only from the webhook: never add a client-side confirm path.
 Price/refund/session-length values in `config/mindease.php` are placeholders until the client confirms.
 
 Client wants users to book therapist sessions from the app; therapists and admins see bookings in a **web panel** (no app install).
@@ -82,7 +83,7 @@ Decisions so far:
   - App: Flutter package `flutter_zoom_videosdk`. Therapist panel: Zoom Video SDK for Web (browser, no install).
   - Backend: `POST /me/bookings/{id}/video-token` returns a short-lived Video SDK JWT (signed with SDK key/secret, HS256, e.g. `firebase/php-jwt`). Session name = booking id. Only the booked user and its therapist can get a token, only in a window around `starts_at` (e.g. 10 min before → `ends_at`).
   - SDK key/secret live only in `.env`, never in the app. Turn cloud recording OFF unless the client asks (health data). Confirm Zoom data-region/consent wording with the client (AU Privacy Act).
-- Panel: inside this Laravel app at `/panel`, role-based (`admin`, `therapist`), session auth (separate `web` guard from the mobile Sanctum tokens).
+- Panel: React SPA (`mindease-web`), role-based (`admin`, `therapist`). Changed from the earlier plan (Blade at `/panel` with a session guard) to bearer tokens, because the panel is a separate origin.
 - Payments: **bookings are paid, via Stripe** (confirmed by client). Planned flow: `POST /me/bookings` holds the slot as `pending` and creates a PaymentIntent (amount set server-side, AUD); app pays with Stripe's Flutter SDK; the booking becomes `confirmed` only from the Stripe webhook (`payment_intent.succeeded`), never from the client. Unpaid holds expire and free the slot. Stripe secret + webhook secret only in `.env`. "Choose Your Plan" stays out of scope in v1.
 - Still to confirm with client: price per session (fixed or per therapist, GST-inclusive?), refund rules on cancel/no-show, cancellation/reschedule rules, therapist payouts (Stripe Connect vs client pays therapists manually), therapist onboarding, timezones (store UTC, show therapist's local time).
 

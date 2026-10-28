@@ -39,6 +39,12 @@ class DatabaseSeeder extends Seeder
                 }
             }
             $this->command?->info('Demo therapist: therapist@mindease.test / password123');
+
+            User::firstOrCreate(
+                ['email' => 'admin@mindease.test'],
+                ['name' => 'MindEase Admin', 'password' => 'password123'],
+            )->forceFill(['role' => User::ROLE_ADMIN])->save();
+            $this->command?->info('Demo admin (web panel): admin@mindease.test / password123');
         }
     }
 }

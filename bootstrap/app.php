@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'idempotent' => \App\Http\Middleware\EnsureIdempotency::class,
+            'role' => \App\Http\Middleware\EnsureRole::class,
         ]);
 
         // Mobile API: never redirect unauthenticated requests to a login page.

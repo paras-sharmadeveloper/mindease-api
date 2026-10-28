@@ -108,7 +108,10 @@ class BookingService
         return ['booking' => $booking->refresh(), 'clientSecret' => $intent['clientSecret']];
     }
 
-    /** User cancel. Cancelling an already-cancelled booking returns it unchanged (safe to retry). */
+    /**
+     * Cancel (reason `user`, or `therapist` from the panel). Cancelling an already-cancelled booking
+     * returns it unchanged (safe to retry). A therapist cancel always refunds in full.
+     */
     public function cancel(Booking $booking, string $reason = 'user'): Booking
     {
         if ($booking->status === Booking::CANCELLED) {
@@ -119,7 +122,7 @@ class BookingService
         }
 
         $wasConfirmed = $booking->status === Booking::CONFIRMED;
-        $refund = $wasConfirmed ? $this->refundIfCancelledNow($booking) : 0;
+        $refund = ! $wasConfirmed ? 0 : ($reason === 'therapist' ? $this->paidCents($booking) : $this->refundIfCancelledNow($booking));
 
         // Refund first: if Stripe fails the booking is untouched and the user can retry.
         // The idempotency key means a retry never refunds twice.
@@ -170,13 +173,36 @@ class BookingService
         }
 
         $config = config('mindease.bookings');
-        $paid = $booking->payment->amount_cents - $booking->payment->refunded_cents;
+        $paid = $this->paidCents($booking);
 
         if (now()->addHours($config['refund_cutoff_hours'])->lessThanOrEqualTo($booking->starts_at)) {
             return $paid;
         }
 
         return intdiv($paid * $config['late_cancel_refund_percent'], 100);
+    }
+
+    private function paidCents(Booking $booking): int
+    {
+        return $booking->payment ? $booking->payment->amount_cents - $booking->payment->refunded_cents : 0;
+    }
+
+    /** Panel: a confirmed session that has started can be marked completed or no_show (and corrected later). */
+    public function canMarkOutcome(Booking $booking): bool
+    {
+        return in_array($booking->status, [Booking::CONFIRMED, Booking::COMPLETED, Booking::NO_SHOW], true)
+            && $booking->starts_at->isPast();
+    }
+
+    public function markOutcome(Booking $booking, string $status): Booking
+    {
+        if (! $this->canMarkOutcome($booking)) {
+            throw new ApiException('booking_not_started', 'You can mark a session only after it has started.', 409);
+        }
+
+        $booking->update(['status' => $status]);
+
+        return $booking;
     }
 
     /** Scheduler: lapse unpaid holds so the slot is offered again. Returns how many lapsed. */
