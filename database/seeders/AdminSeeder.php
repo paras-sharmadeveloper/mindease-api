@@ -8,33 +8,25 @@ use Illuminate\Database\Seeder;
 /**
  * Web-panel admin for servers (staging/production):
  *   php artisan db:seed --class=AdminSeeder --force
- * The password comes from MINDEASE_ADMIN_PASSWORD in the server's .env, never from git (the repo is public).
- * Safe to re-run: an existing admin keeps the password they set later in the panel.
+ * Change the password in the panel (Account) after the first sign-in.
+ * Safe to re-run: an existing admin keeps the password they set later.
  */
 class AdminSeeder extends Seeder
 {
+    private const EMAIL = 'admin@mindease.me';
+
+    private const PASSWORD = 'mindease@123!';
+
     public function run(): void
     {
-        // Read via config, not env(): deploys cache the config, after which env() returns null.
-        $email = strtolower(trim((string) config('mindease.admin.email')));
-        $password = (string) config('mindease.admin.password');
+        $user = User::firstOrCreate(
+            ['email' => self::EMAIL],
+            ['name' => 'MindEase Admin', 'password' => self::PASSWORD],
+        );
+        $user->forceFill(['role' => User::ROLE_ADMIN])->save();
 
-        if (User::where('email', $email)->exists()) {
-            User::where('email', $email)->first()->forceFill(['role' => User::ROLE_ADMIN])->save();
-            $this->command?->info("Admin {$email} already exists (password unchanged).");
-
-            return;
-        }
-
-        if (strlen($password) < 8) {
-            $this->command?->warn('Set MINDEASE_ADMIN_PASSWORD (8+ characters) in .env to create the panel admin. Skipped.');
-
-            return;
-        }
-
-        User::create(['name' => 'MindEase Admin', 'email' => $email, 'password' => $password])
-            ->forceFill(['role' => User::ROLE_ADMIN])->save();
-
-        $this->command?->info("Admin created: {$email}");
+        $this->command?->info($user->wasRecentlyCreated
+            ? 'Admin created: '.self::EMAIL.' (change the password after signing in)'
+            : 'Admin '.self::EMAIL.' already exists (password unchanged).');
     }
 }
