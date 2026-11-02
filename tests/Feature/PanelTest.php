@@ -159,6 +159,29 @@ class PanelTest extends ApiTestCase
         $this->getJson('/v1/panel/dashboard')->assertOk()->assertJsonPath('upcoming', 2)->assertJsonPath('activeTherapists', 2);
     }
 
+    public function test_only_admins_see_app_sign_up_counts(): void
+    {
+        $joinedDaysAgo = fn (int $days) => User::factory()->create()->forceFill(['created_at' => now()->subDays($days)])->save();
+        $joinedDaysAgo(0);
+        $joinedDaysAgo(3);
+        $joinedDaysAgo(20);
+        $joinedDaysAgo(40);
+
+        $this->signIn($this->admin);
+        $this->getJson('/v1/panel/dashboard')->assertOk() // the admin and therapist accounts are not counted
+            ->assertJsonPath('totalUsers', 4)
+            ->assertJsonPath('newUsersLast24Hours', 1)
+            ->assertJsonPath('newUsersLast7Days', 2)
+            ->assertJsonPath('newUsersLast30Days', 3);
+
+        $this->signIn($this->therapistUser);
+        $this->getJson('/v1/panel/dashboard')->assertOk()
+            ->assertJsonPath('totalUsers', null)
+            ->assertJsonPath('newUsersLast24Hours', null)
+            ->assertJsonPath('newUsersLast7Days', null)
+            ->assertJsonPath('newUsersLast30Days', null);
+    }
+
     public function test_therapist_cancel_refunds_in_full_even_late(): void
     {
         $booking = $this->confirmedBooking('2026-11-02T22:00:00Z'); // 22h away: a user cancel would get no refund
