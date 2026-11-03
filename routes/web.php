@@ -1,9 +1,11 @@
 <?php
 
 use App\Models\User;
+use App\Services\ProfilePhoto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 Route::get('/', fn () => response()->json(['name' => 'MindEase API', 'version' => 'v1', 'docs' => '/docs/api', 'panelDocs' => '/docs/panel', 'developers' => '/developers']));
@@ -63,3 +65,15 @@ Route::get('verify-email-change/{user}/{hash}', function (Request $request, stri
             'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'",
         ]);
 })->name('email.change.verify');
+
+// Profile photos (random 40-character names, re-encoded JPEGs). A new upload gets a new name, so cache forever.
+Route::get('avatars/{file}', function (string $file) {
+    $path = ProfilePhoto::DIR.'/'.$file;
+    abort_unless(Storage::disk('local')->exists($path), 404);
+
+    return response(Storage::disk('local')->get($path), 200, [
+        'Content-Type' => 'image/jpeg',
+        'Cache-Control' => 'public, max-age=31536000, immutable',
+        'X-Content-Type-Options' => 'nosniff',
+    ]);
+})->where('file', '[A-Za-z0-9]{40}\\.jpg');

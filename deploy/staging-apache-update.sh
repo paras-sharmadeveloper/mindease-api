@@ -25,6 +25,9 @@ else
   COMPOSER=/usr/local/bin/composer84
 fi
 
+# Profile photos need GD (php8.4-gd).
+$PHP -r 'exit(function_exists("imagecreatefromstring") ? 0 : 1);' || echo "WARNING: php8.4-gd is missing, so profile photo uploads fail. Run: apt install -y php8.4-gd && systemctl reload php8.4-fpm"
+
 $PHP artisan down --retry=15 || true
 trap '$PHP artisan up' EXIT
 

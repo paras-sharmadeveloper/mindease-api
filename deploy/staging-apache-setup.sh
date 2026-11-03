@@ -34,7 +34,7 @@ if ! grep -rqs "ondrej/php" /etc/apt/sources.list /etc/apt/sources.list.d/; then
 fi
 apt-get update -y
 apt-get install -y php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml php8.4-curl \
-  php8.4-zip php8.4-intl php8.4-bcmath php8.4-opcache git unzip supervisor certbot python3-certbot-apache acl
+  php8.4-zip php8.4-intl php8.4-bcmath php8.4-opcache php8.4-gd git unzip supervisor certbot python3-certbot-apache acl
 if [ -n "$OLD_PHP" ] && [ -x "$OLD_PHP" ]; then
   update-alternatives --set php "$OLD_PHP" || true
 fi

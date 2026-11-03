@@ -2,13 +2,14 @@
 
 namespace App\Http\Resources;
 
+use App\Services\ProfilePhoto;
 use App\Support\Iso;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Contract `user`: { id, name, email, createdAt }, plus the profile fields
- * { firstName, lastName, preferredName, mobile, remindersEnabled, pendingEmail }.
+ * { firstName, lastName, preferredName, mobile, photoUrl, remindersEnabled, pendingEmail }.
  */
 class UserResource extends JsonResource
 {
@@ -23,6 +24,7 @@ class UserResource extends JsonResource
             'lastName' => $this->last_name,
             'preferredName' => $this->preferred_name,
             'mobile' => $this->mobile,
+            'photoUrl' => ProfilePhoto::url($this->photo_path),
             'remindersEnabled' => (bool) ($this->reminders_enabled ?? true),
             'pendingEmail' => $this->pending_email,
         ];

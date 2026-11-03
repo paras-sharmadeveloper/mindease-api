@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Notifications\VerifyNewEmailNotification;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage;
 
 /** PATCH /me: the app's profile screen (names, mobile, reminders, email change with verification). */
 class ProfileTest extends ApiTestCase
@@ -50,6 +52,45 @@ class ProfileTest extends ApiTestCase
         $this->patchJson('/v1/me', ['mobile' => '0298765432'])->assertStatus(422)->assertJsonPath('error.field', 'mobile'); // landline
         $this->patchJson('/v1/me', ['firstName' => ''])->assertStatus(422)->assertJsonPath('error.field', 'firstName');
         $this->patchJson('/v1/me', ['remindersEnabled' => 'maybe'])->assertStatus(422)->assertJsonPath('error.field', 'remindersEnabled');
+    }
+
+    public function test_save_changes_in_one_multipart_request_with_a_photo(): void
+    {
+        Storage::fake('local');
+        Notification::fake();
+
+        $res = $this->post('/v1/me', [
+            'firstName' => 'Bittu', 'lastName' => 'Sharma', 'preferredName' => 'Bit',
+            'email' => 'bittu.new@example.com', 'phone' => '0412 345 678', 'remindersEnabled' => 'false',
+            'photo' => UploadedFile::fake()->image('me.jpg', 600, 600),
+        ], ['Accept' => 'application/json'])->assertOk()
+            ->assertJsonPath('firstName', 'Bittu')->assertJsonPath('lastName', 'Sharma')->assertJsonPath('name', 'Bittu Sharma')
+            ->assertJsonPath('email', 'bittu01@yopmail.com')->assertJsonPath('pendingEmail', 'bittu.new@example.com')
+            ->assertJsonPath('mobile', '+61412345678')->assertJsonPath('remindersEnabled', false);
+        $this->assertMatchesRegularExpression('#/avatars/[A-Za-z0-9]{40}\.jpg$#', $res->json('photoUrl'));
+        Notification::assertSentTimes(VerifyNewEmailNotification::class, 1);
+    }
+
+    public function test_patch_with_form_data_is_rejected_clearly(): void
+    {
+        $this->call('PATCH', '/v1/me', [], [], [], ['CONTENT_TYPE' => 'multipart/form-data; boundary=x', 'HTTP_ACCEPT' => 'application/json'])
+            ->assertStatus(415)->assertJsonPath('error.code', 'use_post_for_form_data');
+    }
+
+    public function test_a_bad_photo_saves_nothing(): void
+    {
+        Storage::fake('local');
+        Notification::fake();
+
+        $this->post('/v1/me', [
+            'firstName' => 'Changed', 'email' => 'other@example.com',
+            'photo' => UploadedFile::fake()->createWithContent('x.jpg', 'not an image'),
+        ], ['Accept' => 'application/json'])->assertStatus(422)->assertJsonPath('error.code', 'invalid_photo');
+
+        $fresh = $this->user->fresh();
+        $this->assertSame('Bittu', $fresh->first_name);
+        $this->assertNull($fresh->pending_email);
+        Notification::assertNothingSent();
     }
 
     public function test_older_app_builds_can_still_send_name(): void

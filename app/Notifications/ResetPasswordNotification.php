@@ -32,10 +32,11 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
 
         return (new MailMessage)
             ->subject('Reset your MindEase password')
-            ->greeting('Hi '.strtok($notifiable->name, ' ').',')
-            ->line('We received a request to reset your MindEase password.')
-            ->action('Reset password', $url)
-            ->line("This link expires in {$minutes} minutes.")
-            ->line('If you didn\'t ask for this, you can ignore this email. Your password won\'t change.');
+            ->action('Reset password', $url) // kept for tests and logs; the views below render the email
+            ->view(['emails.reset-password', 'emails.reset-password-text'], [
+                'name' => $notifiable->preferred_name ?: $notifiable->first_name ?: strtok((string) $notifiable->name, ' '),
+                'url' => $url,
+                'minutes' => $minutes,
+            ]);
     }
 }

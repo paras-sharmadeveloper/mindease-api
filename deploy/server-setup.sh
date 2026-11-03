@@ -42,7 +42,7 @@ log "PHP 8.4"
 add-apt-repository -y ppa:ondrej/php
 apt-get update -y
 apt-get install -y php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml php8.4-curl \
-  php8.4-zip php8.4-intl php8.4-bcmath php8.4-opcache php8.4-sqlite3
+  php8.4-zip php8.4-intl php8.4-bcmath php8.4-opcache php8.4-gd php8.4-sqlite3
 php -r 'defined("PASSWORD_ARGON2ID") or exit(1);' || { echo "PHP has no Argon2id support"; exit 1; }
 
 cat > /etc/php/8.4/fpm/conf.d/99-mindease.ini <<'INI'

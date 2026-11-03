@@ -32,10 +32,11 @@ class TestMail extends Command
         }
 
         try {
-            Mail::raw(
-                "This is a test email from MindEase.\n\nIf you can read this, password reset emails will be delivered too.",
-                fn ($m) => $m->to($to)->subject('MindEase test email'),
-            );
+            Mail::send(['emails.test', 'emails.test-text'], [
+                'mailer' => $mailer,
+                'from' => config('mail.from.address'),
+                'sentAt' => now()->toDayDateTimeString().' UTC',
+            ], fn ($m) => $m->to($to)->subject('MindEase test email'));
         } catch (Throwable $e) {
             $this->error('Sending failed: '.$e->getMessage());
 

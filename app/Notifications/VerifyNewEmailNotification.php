@@ -36,12 +36,16 @@ class VerifyNewEmailNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        $url = self::link($this->user, $this->newEmail);
+
         return (new MailMessage)
             ->subject('Confirm your new MindEase email')
-            ->greeting('Hi '.($this->user->preferred_name ?: $this->user->first_name ?: strtok($this->user->name, ' ')).',')
-            ->line('You asked to change the email for your MindEase account to this address.')
-            ->action('Confirm new email', self::link($this->user, $this->newEmail))
-            ->line('This link expires in '.self::MINUTES.' minutes. Until you confirm, you keep signing in with your current email.')
-            ->line('If you didn\'t ask for this, you can ignore this email.');
+            ->action('Confirm new email', $url) // kept for tests and logs; the views below render the email
+            ->view(['emails.verify-new-email', 'emails.verify-new-email-text'], [
+                'name' => $this->user->preferred_name ?: $this->user->first_name ?: strtok((string) $this->user->name, ' '),
+                'email' => $this->newEmail,
+                'url' => $url,
+                'minutes' => self::MINUTES,
+            ]);
     }
 }
