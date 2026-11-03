@@ -98,5 +98,9 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'role:admin,therapist'])->pre
         Route::put('programs/{programId}/content', [Panel\ProgramController::class, 'replaceContent']);
         Route::get('questionnaire', [Panel\QuestionnaireController::class, 'show']);
         Route::put('questionnaire', [Panel\QuestionnaireController::class, 'update']);
+
+        // Email delivery check.
+        Route::get('email', [Panel\EmailController::class, 'show']);
+        Route::post('email/test', [Panel\EmailController::class, 'test']);
     });
 });

@@ -35,6 +35,7 @@ Owner: Paras (ThunderClap). Talk to Paras in Hinglish; client-facing text in for
 | Zoom Video SDK JWT | `app/Services/Video/ZoomVideoToken.php` |
 | API docs (Scramble): **two separate documents**. Mobile app `/docs/api` (everything except `/panel/*` and webhooks), web panel `/docs/panel` (`/panel/*`, `/auth/login|refresh|logout`, Stripe webhook). Titles = first docblock paragraph; groups = `#[Group]` on controllers | `app/Providers/AppServiceProvider.php`, `config/scramble.php` |
 | Admin content editing (programs, onboarding questionnaire); saves go through `ContentImporter::saveProgram/saveDocument`, same checks as the import command | `app/Http/Controllers/Panel/ProgramController.php`, `QuestionnaireController.php` |
+| Email check: settings (no password), queue waiting/failed, test email sent straight away. Panel: Account → Email delivery (admin); CLI: `mindease:test-mail` | `app/Services/MailCheck.php`, `app/Http/Controllers/Panel/EmailController.php` |
 | Developer portal `/developers` (guides, reference, Try-it console; endpoint data lives in the page's `GROUPS` array — update it when an endpoint changes) | `resources/views/developers.blade.php`, `routes/web.php`, flag `MINDEASE_DEVELOPER_DOCS` |
 | Config knobs | `config/mindease.php` (`bookings.*`), `config/services.php` (`stripe`, `zoom`) |
 
@@ -63,7 +64,7 @@ php artisan mindease:create-admin you@example.com   # first web-panel admin on a
 
 ## Status (v1 core)
 
-Done: auth (register/login/refresh rotation/reset + verify + confirm/logout/delete me, POST /me = the only profile update (JSON or form-data; first/last/preferred name, AU mobile as E.164, reminders, email change via signed link `GET /verify-email-change/...` → `pending_email`, `photo` / `removePhoto` via `app/Services/ProfilePhoto.php`: GD re-encode 512² JPEG, EXIF stripped, private disk, served by `GET /avatars/{file}`; needs php8.4-gd), PUT /me/password), content endpoints with ETag, assessment, progress events + rules, points, idempotency, tests, OpenAPI.
+Done: auth (register/login/refresh rotation/reset + verify + confirm/logout/delete me, App `user` has no `name` (first/last only; panel keeps `name`). POST /me = the only profile update (JSON or form-data; first/last/preferred name, AU mobile as E.164, reminders, email change via signed link `GET /verify-email-change/...` → `pending_email`, `photo` / `removePhoto` via `app/Services/ProfilePhoto.php`: GD re-encode 512² JPEG, EXIF stripped, private disk, served by `GET /avatars/{file}`; needs php8.4-gd), PUT /me/password), content endpoints with ETag, assessment, progress events + rules, points, idempotency, tests, OpenAPI.
 
 Open items:
 1. Get `user_progress.dart` from the mobile team → match `ProgressPresenter` output to `UserProgress.toJson()` exactly.
