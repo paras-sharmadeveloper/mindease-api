@@ -20,7 +20,8 @@ class AuthTest extends ApiTestCase
     {
         $this->register()
             ->assertCreated()
-            ->assertJsonStructure(['user' => ['id', 'name', 'email', 'createdAt'], 'accessToken', 'refreshToken'])
+            ->assertJsonStructure(['user' => ['id', 'email', 'firstName', 'lastName', 'createdAt'], 'accessToken', 'refreshToken'])
+            ->assertJsonMissingPath('user.name')
             ->assertJsonPath('user.email', 'asha@example.com');
     }
 
@@ -61,7 +62,7 @@ class AuthTest extends ApiTestCase
     {
         $token = $this->register()->json('accessToken');
 
-        $this->getJson('/v1/me', ['Authorization' => "Bearer {$token}"])->assertOk()->assertJsonPath('name', 'Asha Patel');
+        $this->getJson('/v1/me', ['Authorization' => "Bearer {$token}"])->assertOk()->assertJsonPath('firstName', 'Asha');
         $this->app['auth']->forgetGuards();
         $this->getJson('/v1/me')->assertStatus(401)->assertJsonPath('error.code', 'unauthenticated');
     }
@@ -153,11 +154,11 @@ class AuthTest extends ApiTestCase
         $access = $this->register()->json('accessToken');
         $auth = ['Authorization' => "Bearer {$access}"];
 
-        $this->postJson('/v1/me', ['name' => '  Asha P  ', 'email' => 'hacker@example.com'], $auth)->assertOk()
-            ->assertJsonPath('name', 'Asha P')->assertJsonPath('email', 'asha@example.com');
-        $this->postJson('/v1/me', ['name' => '   '], $auth)
-            ->assertStatus(422)->assertJsonPath('error.code', 'validation_failed')->assertJsonPath('error.field', 'name');
-        $this->getJson('/v1/me', $auth)->assertJsonPath('name', 'Asha P');
+        $this->postJson('/v1/me', ['firstName' => '  Asha  ', 'lastName' => 'P', 'email' => 'asha@example.com'], $auth)->assertOk()
+            ->assertJsonPath('firstName', 'Asha')->assertJsonPath('lastName', 'P')->assertJsonPath('email', 'asha@example.com');
+        $this->postJson('/v1/me', ['firstName' => '   '], $auth)
+            ->assertStatus(422)->assertJsonPath('error.code', 'validation_failed')->assertJsonPath('error.field', 'firstName');
+        $this->getJson('/v1/me', $auth)->assertJsonPath('lastName', 'P');
     }
 
     public function test_change_password_keeps_this_device_and_signs_out_others(): void

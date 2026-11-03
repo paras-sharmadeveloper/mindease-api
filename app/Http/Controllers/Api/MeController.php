@@ -37,22 +37,19 @@ class MeController extends Controller
      *
      * The one endpoint for the profile screen's "Save changes". Send only the fields that changed:
      * `firstName`, `lastName`, `preferredName` ("What should we call you?"), `email`,
-     * `mobile` (or `phone`; Australian mobile, e.g. `0412 345 678`; saved and returned as `+61412345678`; `null` clears it),
+     * `mobile` (Australian mobile, e.g. `0412 345 678`; saved and returned as `+61412345678`; `null` clears it),
      * `remindersEnabled`, `photo` (file: JPG, PNG or WebP, up to 8 MB) and `removePhoto: true`.
      *
      * Send JSON, or `multipart/form-data` when it includes a `photo`. The photo is cropped to a square, resized to
      * 512x512 and stripped of metadata such as location. Nothing is saved if any field is invalid.
-     * Returns the full `user`, including `firstName`, `lastName`, `email`, `mobile` and `photoUrl`.
+     * Returns the full `user`: `firstName`, `lastName`, `preferredName`, `email`, `mobile`, `photoUrl` and the rest.
      *
      * Changing `email` doesn't change it straight away: a confirmation link is emailed to the new address and the
      * response shows it as `pendingEmail` until the user opens the link. `409 email_taken` if another account uses it.
      */
     public function update(Request $request, ProfilePhoto $photos): UserResource
     {
-        // Aliases and form-data values: `phone` = `mobile`; "true"/"false" strings for remindersEnabled.
-        if ($request->has('phone') && ! $request->has('mobile')) {
-            $request->merge(['mobile' => $request->input('phone')]);
-        }
+        // Form-data sends booleans as "true"/"false" strings.
         foreach (['remindersEnabled', 'removePhoto'] as $key) {
             if (is_string($request->input($key))) {
                 $flag = filter_var($request->input($key), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
@@ -61,7 +58,7 @@ class MeController extends Controller
                 }
             }
         }
-        foreach (['firstName', 'lastName', 'preferredName', 'name', 'email'] as $key) {
+        foreach (['firstName', 'lastName', 'preferredName', 'email'] as $key) {
             if ($request->has($key) && is_string($request->input($key))) {
                 $request->merge([$key => trim($request->input($key))]);
             }
@@ -74,7 +71,6 @@ class MeController extends Controller
             'firstName' => ['sometimes', 'required', 'string', 'max:50'],
             'lastName' => ['sometimes', 'nullable', 'string', 'max:50'],
             'preferredName' => ['sometimes', 'nullable', 'string', 'max:50'],
-            'name' => ['sometimes', 'required', 'string', 'max:100'], // older app builds
             'mobile' => ['sometimes', 'nullable', 'string', 'regex:/^\+614\d{8}$/'],
             'remindersEnabled' => ['sometimes', 'boolean'],
             'email' => ['sometimes', 'required', 'string', 'email:rfc', 'max:255'],
@@ -82,7 +78,6 @@ class MeController extends Controller
             'removePhoto' => ['sometimes', 'boolean'],
         ], [
             'firstName.required' => 'Please enter your first name.',
-            'name.required' => 'Please enter your name.',
             'mobile.regex' => 'Enter an Australian mobile number, like 0412 345 678.',
             'email.required' => 'Please enter your email.',
             'email.email' => 'Please enter a valid email address.',
@@ -109,9 +104,6 @@ class MeController extends Controller
             if (array_key_exists($key, $data)) {
                 $user->{$column} = $data[$key] === '' ? null : $data[$key];
             }
-        }
-        if (array_key_exists('name', $data) && ! array_key_exists('firstName', $data)) {
-            $user->name = $data['name'];
         }
 
         $notifyEmail = array_key_exists('email', $data) ? $this->requestEmailChange($user, Str::lower($data['email'])) : null;

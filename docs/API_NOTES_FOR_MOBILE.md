@@ -39,9 +39,17 @@ Live docs (local): `http://localhost:8000/docs/api` · OpenAPI JSON: `/docs/api.
 - Send JSON, or `multipart/form-data` when the user picked a new photo (file field `photo`). In form-data, send booleans as `true`/`false`.
 - If anything is invalid (for example the photo), nothing is saved.
 - The response is always the full `user`: `firstName`, `lastName`, `email`, `mobile`, `photoUrl` and the rest.
-- `phone` is accepted as another name for `mobile`.
+- One key per field: `mobile` (not `phone`), `firstName` + `lastName` (not `name`).
 
-`user` now also has `{ firstName, lastName, preferredName, mobile, photoUrl, remindersEnabled, pendingEmail }` (in `/me`, register and login). `name` stays and always equals "firstName lastName".
+**⚠ Changed `user` shape** (in `/me`, `POST /me`, register and login):
+
+```json
+{ "id": "…", "email": "bittu01@yopmail.com", "firstName": "Bittu", "lastName": "Kumar", "preferredName": "Bit",
+  "mobile": "+61412345678", "photoUrl": "https://api.mindease.me/avatars/….jpg", "remindersEnabled": true,
+  "pendingEmail": null, "createdAt": "2026-10-26T11:45:24.000Z" }
+```
+
+`name` is **no longer returned**: it only repeated `firstName` + `lastName`. Show the full name as `firstName lastName`, and greet with `preferredName ?? firstName`. Register still takes `{ name, email, password }`; the name is split into `firstName` / `lastName`.
 
 | Screen field | Field | Rules |
 |---|---|---|

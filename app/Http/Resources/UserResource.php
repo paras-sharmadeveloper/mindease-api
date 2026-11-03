@@ -8,8 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Contract `user`: { id, name, email, createdAt }, plus the profile fields
- * { firstName, lastName, preferredName, mobile, photoUrl, remindersEnabled, pendingEmail }.
+ * App `user`: { id, email, firstName, lastName, preferredName, mobile, photoUrl, remindersEnabled, pendingEmail, createdAt }.
+ * No `name`: it would only repeat firstName + lastName. (The web panel has its own shape with `name`.)
  */
 class UserResource extends JsonResource
 {
@@ -17,9 +17,7 @@ class UserResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
             'email' => $this->email,
-            'createdAt' => Iso::utc($this->created_at),
             'firstName' => $this->first_name,
             'lastName' => $this->last_name,
             'preferredName' => $this->preferred_name,
@@ -27,6 +25,7 @@ class UserResource extends JsonResource
             'photoUrl' => ProfilePhoto::url($this->photo_path),
             'remindersEnabled' => (bool) ($this->reminders_enabled ?? true),
             'pendingEmail' => $this->pending_email,
+            'createdAt' => Iso::utc($this->created_at),
         ];
     }
 }

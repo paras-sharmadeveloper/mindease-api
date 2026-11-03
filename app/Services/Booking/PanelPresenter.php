@@ -2,7 +2,6 @@
 
 namespace App\Services\Booking;
 
-use App\Http\Resources\UserResource;
 use App\Models\Booking;
 use App\Models\Therapist;
 use App\Models\User;
@@ -19,7 +18,7 @@ class PanelPresenter
     public function me(User $user): array
     {
         return [
-            'user' => new UserResource($user),
+            'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'createdAt' => Iso::utc($user->created_at)],
             'role' => $user->role,
             'therapist' => $user->therapist ? $this->therapist($user->therapist->load('user')) : null,
         ];

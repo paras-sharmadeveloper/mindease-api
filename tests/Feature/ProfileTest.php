@@ -25,7 +25,7 @@ class ProfileTest extends ApiTestCase
     public function test_existing_name_is_split_and_new_fields_have_defaults(): void
     {
         $this->getJson('/v1/me')->assertOk()
-            ->assertJsonPath('name', 'Bittu Kumar')
+            ->assertJsonMissingPath('name')
             ->assertJsonPath('firstName', 'Bittu')->assertJsonPath('lastName', 'Kumar')
             ->assertJsonPath('preferredName', null)->assertJsonPath('mobile', null)
             ->assertJsonPath('remindersEnabled', true)->assertJsonPath('pendingEmail', null);
@@ -36,13 +36,13 @@ class ProfileTest extends ApiTestCase
         $this->postJson('/v1/me', [
             'firstName' => ' bittu ', 'lastName' => '', 'preferredName' => 'Bit', 'mobile' => '0412 345 678', 'remindersEnabled' => false,
         ])->assertOk()
-            ->assertJsonPath('firstName', 'bittu')->assertJsonPath('lastName', null)->assertJsonPath('name', 'bittu')
+            ->assertJsonPath('firstName', 'bittu')->assertJsonPath('lastName', null)
             ->assertJsonPath('preferredName', 'Bit')->assertJsonPath('mobile', '+61412345678')
             ->assertJsonPath('remindersEnabled', false);
 
         // Only what is sent changes.
         $this->postJson('/v1/me', ['lastName' => 'Sharma'])->assertOk()
-            ->assertJsonPath('name', 'bittu Sharma')->assertJsonPath('mobile', '+61412345678')->assertJsonPath('preferredName', 'Bit');
+            ->assertJsonPath('lastName', 'Sharma')->assertJsonPath('mobile', '+61412345678')->assertJsonPath('preferredName', 'Bit');
 
         foreach (['+61 412 345 678', '61412345678', '(04) 1234-5678'] as $format) {
             $this->postJson('/v1/me', ['mobile' => $format])->assertOk()->assertJsonPath('mobile', '+61412345678');
@@ -61,10 +61,10 @@ class ProfileTest extends ApiTestCase
 
         $res = $this->post('/v1/me', [
             'firstName' => 'Bittu', 'lastName' => 'Sharma', 'preferredName' => 'Bit',
-            'email' => 'bittu.new@example.com', 'phone' => '0412 345 678', 'remindersEnabled' => 'false',
+            'email' => 'bittu.new@example.com', 'mobile' => '0412 345 678', 'remindersEnabled' => 'false',
             'photo' => UploadedFile::fake()->image('me.jpg', 600, 600),
         ], ['Accept' => 'application/json'])->assertOk()
-            ->assertJsonPath('firstName', 'Bittu')->assertJsonPath('lastName', 'Sharma')->assertJsonPath('name', 'Bittu Sharma')
+            ->assertJsonPath('firstName', 'Bittu')->assertJsonPath('lastName', 'Sharma')
             ->assertJsonPath('email', 'bittu01@yopmail.com')->assertJsonPath('pendingEmail', 'bittu.new@example.com')
             ->assertJsonPath('mobile', '+61412345678')->assertJsonPath('remindersEnabled', false);
         $this->assertMatchesRegularExpression('#/avatars/[A-Za-z0-9]{40}\.jpg$#', $res->json('photoUrl'));
@@ -94,10 +94,16 @@ class ProfileTest extends ApiTestCase
         Notification::assertNothingSent();
     }
 
-    public function test_older_app_builds_can_still_send_name(): void
+    public function test_one_key_per_field(): void
     {
-        $this->postJson('/v1/me', ['name' => 'Asha Devi Patel'])->assertOk()
-            ->assertJsonPath('name', 'Asha Devi Patel')->assertJsonPath('firstName', 'Asha')->assertJsonPath('lastName', 'Devi Patel');
+        $res = $this->postJson('/v1/me', ['name' => 'Ignored Name', 'phone' => '0412 345 678'])->assertOk()
+            ->assertJsonPath('firstName', 'Bittu')->assertJsonPath('mobile', null);
+        $this->assertSame(
+            ['id', 'email', 'firstName', 'lastName', 'preferredName', 'mobile', 'photoUrl', 'remindersEnabled', 'pendingEmail', 'createdAt'],
+            array_keys($res->json()),
+        );
+        // The panel still shows the full name.
+        $this->assertSame('Bittu Kumar', $this->user->fresh()->name);
     }
 
     public function test_email_change_waits_for_the_link_sent_to_the_new_address(): void
