@@ -19,7 +19,7 @@ Live docs (local): `http://localhost:8000/docs/api` · OpenAPI JSON: `/docs/api.
 - Access token TTL: **15 min**. Refresh token TTL: **60 days**, **rotated on every refresh**.
 - Always store the **new** refresh token from `/auth/refresh`. Reusing an old one revokes the whole session (stolen-token protection), so **run refresh calls one at a time** (single-flight). Don't fire two refreshes in parallel.
   - After a reuse, every token from that sign-in (including the newest one) returns `401 invalid_refresh_token`. Send the user to sign in again.
-- **Added:** `POST /auth/password-reset/confirm { email, token, password }` → `204`, or `422 invalid_reset_token`. The reset email links to `mindease://reset-password?token=…&email=…` (configurable). It signs out all devices.
+- **Added:** `POST /auth/password-reset/confirm { email, token, password }` → `204`, or `422 invalid_reset_token`. The reset email links to a **web page**, `https://api.<domain>/reset-password?token=…&email=…`, where the user sets the new password; the app needs no reset screen. (A `mindease://` deep link is still possible via `MINDEASE_RESET_URL` if the app wants to handle it.) Confirming signs out all devices.
 - **Added:** `POST /auth/password-reset/verify { email, token }` → `204` if the link is still valid, or `422 invalid_reset_token` (`field: token`). It does **not** use up the token. Call it when the reset deep link opens: on `422` show "This link has expired" with a button to request a new one, instead of letting the user type a new password first. Shares the reset rate limit (5 per hour per email).
 - **Added:** `GET /me` → `user` (handy for a splash session check).
 
@@ -27,11 +27,26 @@ Live docs (local): `http://localhost:8000/docs/api` · OpenAPI JSON: `/docs/api.
 
 | Method | Path | Body | Returns |
 |---|---|---|---|
-| PATCH | `/me` | `{ name }` | `200 user`. Only `name` can change; any other field is ignored. Empty name → `422 validation_failed` (`field: name`) |
+| PATCH | `/me` | any of `{ firstName, lastName, preferredName, mobile, remindersEnabled, email }` | `200 user`. Send only what changed. See "Profile screen" below |
 | PUT | `/me/password` | `{ currentPassword, password }` | `204`. Wrong current password → `422 invalid_credentials` (`field: currentPassword`). New password under 8 characters or the same as the current one → `422 validation_failed` (`field: password`) |
 
 - Changing the password keeps **this** device signed in (its access and refresh tokens keep working) and signs out every other device. Old reset links stop working.
-- Changing the email isn't supported yet: it needs an email verification step, which is waiting on the client.
+
+### Profile screen (`PATCH /me`)
+
+`user` now also has `{ firstName, lastName, preferredName, mobile, remindersEnabled, pendingEmail }` (in `/me`, register and login). `name` stays and always equals "firstName lastName".
+
+| Screen field | Field | Rules |
+|---|---|---|
+| First name | `firstName` | Required if sent, max 50 |
+| Last name | `lastName` | Optional (`""` or `null` clears it), max 50 |
+| What should we call you? | `preferredName` | Optional, max 50. Greet with `preferredName ?? firstName` |
+| Email | `email` | See below |
+| Mobile number | `mobile` | Australian mobile. Send it as typed (`0412 345 678`, `+61 412 345 678`); it is saved and returned as `+61412345678`. `null` clears it. Otherwise `422` (`field: mobile`) "Enter an Australian mobile number, like 0412 345 678." |
+| Reminders | `remindersEnabled` | `true` / `false`. Default `true`. (Stored now; session reminders aren't sent yet.) |
+| Member since | `createdAt` | Read-only |
+
+**Email change:** sending a new `email` doesn't change it yet. The server emails a confirmation link (60 minutes) to the new address and returns `pendingEmail: "new@…"`; `email` stays the old one, and the user keeps signing in with it. Show "We've sent a link to {pendingEmail}". When the link is opened, `email` becomes the new address and `pendingEmail` goes back to `null` (refresh with `GET /me`). Sending the current email again cancels the change. Errors: `409 email_taken` (`field: email`), `429 rate_limited` (more than 5 changes an hour).
 
 ## Content
 

@@ -11,9 +11,9 @@ return [
 
     'password_reset' => [
         // Link in the reset email. {token} and {email} are replaced (URL-encoded).
-        // App deep link, e.g. mindease://reset-password?token={token}&email={email}
-        // or a web page, e.g. https://app.example.com/reset-password?token={token}&email={email}
-        'url' => env('MINDEASE_RESET_URL', 'mindease://reset-password?token={token}&email={email}'),
+        // Default: this API's own reset page (GET /reset-password), which works for everyone.
+        // An app deep link also works if the app handles it: mindease://reset-password?token={token}&email={email}
+        'url' => env('MINDEASE_RESET_URL', rtrim((string) env('APP_URL', 'http://localhost'), '/').'/reset-password?token={token}&email={email}'),
     ],
 
     'progress' => [

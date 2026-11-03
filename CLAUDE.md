@@ -63,12 +63,12 @@ php artisan mindease:create-admin you@example.com   # first web-panel admin on a
 
 ## Status (v1 core)
 
-Done: auth (register/login/refresh rotation/reset + verify + confirm/logout/delete me, PATCH /me name, PUT /me/password), content endpoints with ETag, assessment, progress events + rules, points, idempotency, tests, OpenAPI.
+Done: auth (register/login/refresh rotation/reset + verify + confirm/logout/delete me, PATCH /me profile (first/last/preferred name, AU mobile as E.164, reminders, email change via signed link `GET /verify-email-change/...` → `pending_email`), PUT /me/password), content endpoints with ETag, assessment, progress events + rules, points, idempotency, tests, OpenAPI.
 
 Open items:
 1. Get `user_progress.dart` from the mobile team → match `ProgressPresenter` output to `UserProgress.toJson()` exactly.
 2. Replace `database/content/*.json` (SAMPLE) with the app's real `assets/content/*.json`.
-3. Confirm reset-link target (app deep link vs web page) → `MINDEASE_RESET_URL`.
+3. Reset link → web page `GET /reset-password` (`resources/views/reset-password.blade.php`, default `MINDEASE_RESET_URL`). Servers with `MINDEASE_RESET_URL=mindease://…` in `.env` must update it. Mail check: `php artisan mindease:test-mail you@example.com`.
 4. Email verification? (not in contract — ask client).
 5. Staging deploy in ap-southeast-2 (SES Sydney for mail, queue worker, scheduler).
 

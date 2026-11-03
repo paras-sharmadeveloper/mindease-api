@@ -1,6 +1,10 @@
 <?php
 
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 Route::get('/', fn () => response()->json(['name' => 'MindEase API', 'version' => 'v1', 'docs' => '/docs/api', 'panelDocs' => '/docs/panel', 'developers' => '/developers']));
 
@@ -10,3 +14,52 @@ Route::get('developers', function () {
 
     return view('developers', ['baseUrl' => url('/v1')]);
 });
+
+// Password reset page: the reset email links here (MINDEASE_RESET_URL). It calls the public
+// /v1/auth/password-reset/verify and /confirm endpoints, so all rules and rate limits stay in the API.
+Route::get('reset-password', function () {
+    $nonce = Str::random(24);
+
+    return response()
+        ->view('reset-password', [
+            'nonce' => $nonce,
+            'apiBase' => url('/v1'),
+            'minutes' => config('auth.passwords.users.expire', 60),
+        ])
+        ->withHeaders([
+            'Cache-Control' => 'no-store',
+            'Referrer-Policy' => 'no-referrer',
+            'X-Frame-Options' => 'DENY',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; script-src 'nonce-{$nonce}'; style-src 'nonce-{$nonce}'; "
+                ."connect-src 'self'; img-src 'self' data:; form-action 'none'; frame-ancestors 'none'; base-uri 'none'",
+        ]);
+})->name('password.reset');
+
+// Confirms an email change: the link in VerifyNewEmailNotification (signed, 60 minutes).
+Route::get('verify-email-change/{user}/{hash}', function (Request $request, string $user, string $hash) {
+    $account = Str::isUuid($user) ? User::find($user) : null;
+    $ok = $request->hasValidSignature() && $account && $account->pending_email
+        && hash_equals(sha1($account->pending_email), $hash);
+
+    $status = 'expired';
+    if ($ok) {
+        if (User::where('email', $account->pending_email)->whereKeyNot($account->id)->exists()) {
+            $status = 'taken';
+        } else {
+            DB::transaction(function () use ($account) {
+                DB::table('password_reset_tokens')->where('email', $account->email)->delete();
+                $account->forceFill(['email' => $account->pending_email, 'pending_email' => null])->save();
+            });
+            $status = 'done';
+        }
+    }
+
+    return response()->view('email-change', ['status' => $status, 'email' => $account?->email])
+        ->withHeaders([
+            'Cache-Control' => 'no-store',
+            'Referrer-Policy' => 'no-referrer',
+            'X-Frame-Options' => 'DENY',
+            'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'",
+        ]);
+})->name('email.change.verify');

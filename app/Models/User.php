@@ -28,6 +28,23 @@ class User extends Authenticatable
 
     public const ROLE_ADMIN = 'admin';
 
+    /**
+     * Keeps `name` (contract `user.name`, panel, bookings) and first/last name in step:
+     * setting first/last rebuilds `name`; setting only `name` (register, panel, seeders) splits it.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (User $user) {
+            if ($user->isDirty(['first_name', 'last_name'])) {
+                $user->name = trim($user->first_name.' '.$user->last_name) ?: $user->name;
+            } elseif ($user->isDirty('name') || $user->first_name === null) {
+                [$first, $last] = array_pad(preg_split('/\s+/', trim((string) $user->name), 2), 2, null);
+                $user->first_name = $first ?: null;
+                $user->last_name = $last ?: null;
+            }
+        });
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
@@ -38,6 +55,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'reminders_enabled' => 'boolean',
         ];
     }
 

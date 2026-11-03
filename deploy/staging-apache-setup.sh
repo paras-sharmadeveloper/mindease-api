@@ -100,13 +100,23 @@ QUEUE_CONNECTION=database
 FILESYSTEM_DISK=local
 
 # Staging: emails are written to storage/logs instead of being sent. Switch to SES for real mail.
+# Hostinger email (SMTP). Use the full mailbox address as the username, and the same address as FROM.
+# Port 465 = MAIL_SCHEME=smtps (SSL). Or port 587 = MAIL_SCHEME=smtp (STARTTLS).
+# MAIL_MAILER=smtp
+# MAIL_SCHEME=smtps
+# MAIL_HOST=smtp.hostinger.com
+# MAIL_PORT=465
+# MAIL_USERNAME=no-reply@mindease.me
+# MAIL_PASSWORD=
+# MAIL_FROM_ADDRESS="no-reply@mindease.me"
+# Check with: php artisan mindease:test-mail you@example.com
 MAIL_MAILER=log
 MAIL_FROM_ADDRESS="no-reply@mindease.me"
 MAIL_FROM_NAME="MindEase"
 
 MINDEASE_ACCESS_TTL_MINUTES=15
 MINDEASE_REFRESH_TTL_DAYS=60
-MINDEASE_RESET_URL="mindease://reset-password?token={token}&email={email}"
+MINDEASE_RESET_URL="https://$DOMAIN/reset-password?token={token}&email={email}"
 MINDEASE_VIDEO_CAP_ENABLED=false
 MINDEASE_DEVELOPER_DOCS=true
 

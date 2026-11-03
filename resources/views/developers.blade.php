@@ -322,7 +322,7 @@ final completion = r.data['completion']; // null or { phaseId, pointsAwarded, ..
       <h3>Splash and logout</h3>
       <p>On the splash screen, call <code>GET /me</code> when a refresh token exists. The interceptor refreshes the access token when needed. To log out, call <code>POST /auth/logout</code> with the refresh token, then clear storage. Clear storage even if the call fails.</p>
       <h3>Password reset</h3>
-      <p><code>POST /auth/password-reset</code> always returns <code>202</code>. The email links to <code>mindease://reset-password?token=…&amp;email=…</code>. Handle that deep link, check it with <code>POST /auth/password-reset/verify</code>, ask for a new password and call <code>POST /auth/password-reset/confirm</code>. The confirm call signs out every device.</p>
+      <p><code>POST /auth/password-reset</code> always returns <code>202</code>. The email links to the API's own web page, <code>/reset-password?token=…&amp;email=…</code>, where the user sets the new password, so the app only needs a "Forgot password" screen that calls this endpoint. The page uses <code>POST /auth/password-reset/verify</code> and <code>POST /auth/password-reset/confirm</code>; confirming signs out every device.</p>
     </div>
     <div class="code-col">
       <div class="codebox"><div class="head"><span class="title">auth_interceptor.dart · single-flight refresh</span><button class="copy">Copy</button></div><pre class="js-hl" data-lang="dart">class AuthInterceptor extends QueuedInterceptor {
@@ -778,7 +778,7 @@ const GROUPS = [
     response: [200, { accessToken: '2|bnYDP1xYaJa3VlHDDSBCDGyrbqn5gm5q6BocNQ2g54ccc01b', refreshToken: 'ZxejtkD5F9W6GWy8XuS8WC7GKkgGfhFRfJNv4S2aLeVGx8lreih82lIFvmXEoCWw' }],
     errors: [[401, 'invalid_refresh_token', 'Expired, revoked or reused. Sign in again.']] },
   { id: 'password-reset', method: 'POST', path: '/auth/password-reset', title: 'Request a password reset', auth: false,
-    desc: 'Emails a reset link (<code>mindease://reset-password?token=…&email=…</code>). Always returns 202, so the response never reveals whether an account exists.',
+    desc: 'Emails a link to the reset web page (<code>/reset-password?token=…&email=…</code>), where the user sets a new password. Always returns 202, so the response never reveals whether an account exists.',
     params: [['email', 'body', 'string', true, '']], body: { email: 'demo@mindease.test' }, response: [202, null],
     errors: [[429, 'rate_limited', '5 per hour per email']] },
   { id: 'password-reset-confirm', method: 'POST', path: '/auth/password-reset/confirm', title: 'Set a new password', auth: false,
@@ -798,9 +798,11 @@ const GROUPS = [
  { id: 'account', title: 'Account', intro: 'The signed-in user.', endpoints: [
   { id: 'me', method: 'GET', path: '/me', title: 'Get the current user', auth: true, desc: 'Use it on the splash screen to check the session, and on Profile.', response: [200, USER], errors: [[401, 'unauthenticated', '']] },
   { id: 'update-me', method: 'PATCH', path: '/me', title: 'Update the profile', auth: true,
-    desc: 'Changes the name. The email can\'t be changed yet.',
-    params: [['name', 'body', 'string', true, 'Up to 100 characters.']], body: { name: 'Asha Patel' }, response: [200, USER],
-    errors: [[422, 'validation_failed', 'Name is empty.']] },
+    desc: 'Send only the fields that changed. A new <code>email</code> is confirmed by a link sent to that address; until then it shows as <code>pendingEmail</code>. <code>mobile</code> is an Australian mobile, returned as <code>+61412345678</code>.',
+    params: [['firstName', 'body', 'string', false, 'Up to 50 characters.'], ['lastName', 'body', 'string|null', false, ''], ['preferredName', 'body', 'string|null', false, '"What should we call you?"'],
+      ['mobile', 'body', 'string|null', false, 'e.g. 0412 345 678'], ['remindersEnabled', 'body', 'boolean', false, ''], ['email', 'body', 'string', false, 'Sends a confirmation link to the new address.']],
+    body: { firstName: 'Asha', lastName: 'Patel', preferredName: 'Ash', mobile: '0412 345 678', remindersEnabled: true }, response: [200, { ...USER, firstName: 'Asha', lastName: 'Patel', preferredName: 'Ash', mobile: '+61412345678', remindersEnabled: true, pendingEmail: null }],
+    errors: [[422, 'validation_failed', 'For example, mobile isn\'t an Australian mobile.'], [409, 'email_taken', 'Another account uses that email.'], [429, 'rate_limited', 'More than 5 email changes an hour.']] },
   { id: 'change-password', method: 'PUT', path: '/me/password', title: 'Change the password', auth: true,
     desc: 'For a signed-in user who knows their current password. This device stays signed in; every other device is signed out.',
     params: [['currentPassword', 'body', 'string', true, ''], ['password', 'body', 'string', true, 'At least 8 characters, different from the current one.']],
