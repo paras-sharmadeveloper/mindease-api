@@ -46,8 +46,6 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('auth-general', fn (Request $request) => Limit::perMinute(30)->by('auth:'.$request->ip()));
 
-        RateLimiter::for('photo', fn (Request $request) => Limit::perHour(20)->by('photo:'.($request->user()?->id ?: $request->ip())));
-
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(180)->by($request->user()?->id ?: $request->ip()));
 
         // Scramble serves /docs/api outside `local` only when this gate passes (same switch as /developers).

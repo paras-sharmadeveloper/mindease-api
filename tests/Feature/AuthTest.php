@@ -153,9 +153,9 @@ class AuthTest extends ApiTestCase
         $access = $this->register()->json('accessToken');
         $auth = ['Authorization' => "Bearer {$access}"];
 
-        $this->patchJson('/v1/me', ['name' => '  Asha P  ', 'email' => 'hacker@example.com'], $auth)->assertOk()
+        $this->postJson('/v1/me', ['name' => '  Asha P  ', 'email' => 'hacker@example.com'], $auth)->assertOk()
             ->assertJsonPath('name', 'Asha P')->assertJsonPath('email', 'asha@example.com');
-        $this->patchJson('/v1/me', ['name' => '   '], $auth)
+        $this->postJson('/v1/me', ['name' => '   '], $auth)
             ->assertStatus(422)->assertJsonPath('error.code', 'validation_failed')->assertJsonPath('error.field', 'name');
         $this->getJson('/v1/me', $auth)->assertJsonPath('name', 'Asha P');
     }

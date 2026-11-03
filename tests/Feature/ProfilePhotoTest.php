@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
-/** POST/DELETE /me/photo and GET /avatars/{file}. */
+/** Profile photo through POST /me (photo / removePhoto) and GET /avatars/{file}. */
 class ProfilePhotoTest extends ApiTestCase
 {
     private User $user;
@@ -39,7 +39,7 @@ class ProfilePhotoTest extends ApiTestCase
         $file = $this->jpegWithExif();
         $this->assertStringContainsString('GPS-SECRET-LOCATION', file_get_contents($file->getRealPath()));
 
-        $url = $this->post('/v1/me/photo', ['photo' => $file], ['Accept' => 'application/json'])->assertOk()->json('photoUrl');
+        $url = $this->post('/v1/me', ['photo' => $file], ['Accept' => 'application/json'])->assertOk()->json('photoUrl');
         $this->assertMatchesRegularExpression('#/avatars/[A-Za-z0-9]{40}\.jpg$#', $url);
         $this->getJson('/v1/me')->assertJsonPath('photoUrl', $url);
 
@@ -53,9 +53,9 @@ class ProfilePhotoTest extends ApiTestCase
 
     public function test_new_upload_replaces_and_deletes_the_old_file(): void
     {
-        $first = $this->post('/v1/me/photo', ['photo' => UploadedFile::fake()->image('a.png', 300, 300)], ['Accept' => 'application/json'])->assertOk()->json('photoUrl');
+        $first = $this->post('/v1/me', ['photo' => UploadedFile::fake()->image('a.png', 300, 300)], ['Accept' => 'application/json'])->assertOk()->json('photoUrl');
         $oldPath = $this->user->fresh()->photo_path;
-        $second = $this->post('/v1/me/photo', ['photo' => UploadedFile::fake()->image('b.png', 100, 200)], ['Accept' => 'application/json'])->assertOk()->json('photoUrl');
+        $second = $this->post('/v1/me', ['photo' => UploadedFile::fake()->image('b.png', 100, 200)], ['Accept' => 'application/json'])->assertOk()->json('photoUrl');
 
         $this->assertNotSame($first, $second);
         Storage::disk('local')->assertMissing($oldPath);
@@ -67,23 +67,34 @@ class ProfilePhotoTest extends ApiTestCase
 
     public function test_delete_photo(): void
     {
-        $this->post('/v1/me/photo', ['photo' => UploadedFile::fake()->image('a.jpg')], ['Accept' => 'application/json'])->assertOk();
+        $this->post('/v1/me', ['photo' => UploadedFile::fake()->image('a.jpg')], ['Accept' => 'application/json'])->assertOk();
         $path = $this->user->fresh()->photo_path;
 
-        $this->deleteJson('/v1/me/photo')->assertOk()->assertJsonPath('photoUrl', null);
+        $this->postJson('/v1/me', ['removePhoto' => true])->assertOk()->assertJsonPath('photoUrl', null);
         Storage::disk('local')->assertMissing($path);
     }
 
     public function test_rejects_files_that_are_not_photos(): void
     {
-        $this->post('/v1/me/photo', [], ['Accept' => 'application/json'])->assertStatus(422)->assertJsonPath('error.field', 'photo');
-        $this->post('/v1/me/photo', ['photo' => UploadedFile::fake()->createWithContent('x.jpg', '<?php echo 1;')], ['Accept' => 'application/json'])
+        $this->post('/v1/me', ['photo' => UploadedFile::fake()->createWithContent('x.jpg', '<?php echo 1;')], ['Accept' => 'application/json'])
             ->assertStatus(422)->assertJsonPath('error.code', 'invalid_photo');
-        $this->post('/v1/me/photo', ['photo' => UploadedFile::fake()->image('a.gif')], ['Accept' => 'application/json'])
+        $this->post('/v1/me', ['photo' => UploadedFile::fake()->image('a.gif')], ['Accept' => 'application/json'])
             ->assertStatus(422)->assertJsonPath('error.code', 'invalid_photo');
-        $this->post('/v1/me/photo', ['photo' => UploadedFile::fake()->create('big.jpg', 9000, 'image/jpeg')], ['Accept' => 'application/json'])
+        $this->post('/v1/me', ['photo' => UploadedFile::fake()->create('big.jpg', 9000, 'image/jpeg')], ['Accept' => 'application/json'])
             ->assertStatus(422)->assertJsonPath('error.field', 'photo');
+        $this->post('/v1/me', ['removePhoto' => 'maybe'], ['Accept' => 'application/json'])->assertStatus(422)->assertJsonPath('error.field', 'removePhoto');
         $this->assertNull($this->user->fresh()->photo_path);
+    }
+
+    public function test_photo_uploads_are_rate_limited(): void
+    {
+        foreach (range(1, 20) as $i) {
+            $this->post('/v1/me', ['photo' => UploadedFile::fake()->image("p{$i}.jpg", 50, 50)], ['Accept' => 'application/json'])->assertOk();
+        }
+        $this->post('/v1/me', ['photo' => UploadedFile::fake()->image('p21.jpg', 50, 50)], ['Accept' => 'application/json'])
+            ->assertStatus(429)->assertJsonPath('error.code', 'rate_limited');
+        // Saving other fields still works.
+        $this->postJson('/v1/me', ['preferredName' => 'Bit'])->assertOk();
     }
 
     public function test_avatar_route_only_serves_avatar_names(): void
@@ -94,10 +105,10 @@ class ProfilePhotoTest extends ApiTestCase
 
     public function test_deleting_the_account_deletes_the_photo(): void
     {
-        $this->post('/v1/me/photo', ['photo' => UploadedFile::fake()->image('a.jpg')], ['Accept' => 'application/json'])->assertOk();
+        $this->post('/v1/me', ['photo' => UploadedFile::fake()->image('a.jpg')], ['Accept' => 'application/json'])->assertOk();
         $path = $this->user->fresh()->photo_path;
 
-        $this->deleteJson('/v1/me')->assertNoContent();
+        $this->deleteJson('/v1/me')->assertNoContent(); // account deletion
         Storage::disk('local')->assertMissing($path);
     }
 }

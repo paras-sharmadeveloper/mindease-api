@@ -27,14 +27,19 @@ Live docs (local): `http://localhost:8000/docs/api` · OpenAPI JSON: `/docs/api.
 
 | Method | Path | Body | Returns |
 |---|---|---|---|
-| PATCH | `/me` | any of `{ firstName, lastName, preferredName, mobile, remindersEnabled, email }` | `200 user`. Send only what changed. See "Profile screen" below |
+| POST | `/me` | any of `{ firstName, lastName, preferredName, email, mobile, remindersEnabled, photo, removePhoto }` | `200 user`. **The only profile update endpoint.** Send only what changed. See "Profile screen" below |
 | PUT | `/me/password` | `{ currentPassword, password }` | `204`. Wrong current password → `422 invalid_credentials` (`field: currentPassword`). New password under 8 characters or the same as the current one → `422 validation_failed` (`field: password`) |
 
 - Changing the password keeps **this** device signed in (its access and refresh tokens keep working) and signs out every other device. Old reset links stop working.
 
-### Profile screen (`PATCH /me`, or `POST /me` with a photo)
+### Profile screen: one endpoint, `POST /me`
 
-**"Save changes" = one request.** Send JSON with `PATCH /me`, or `multipart/form-data` with `POST /me` when the user also picked a new photo (field `photo`). In form-data, send `remindersEnabled` as `true`/`false`. If anything is invalid (for example the photo), nothing is saved. The response is always the full `user`: `firstName`, `lastName`, `email`, `mobile`, `photoUrl` and the rest. `phone` is accepted as another name for `mobile`.
+**"Save changes" = one `POST /me` request** with everything that changed, photo included. There is no separate photo endpoint, and no `PATCH /me`.
+
+- Send JSON, or `multipart/form-data` when the user picked a new photo (file field `photo`). In form-data, send booleans as `true`/`false`.
+- If anything is invalid (for example the photo), nothing is saved.
+- The response is always the full `user`: `firstName`, `lastName`, `email`, `mobile`, `photoUrl` and the rest.
+- `phone` is accepted as another name for `mobile`.
 
 `user` now also has `{ firstName, lastName, preferredName, mobile, photoUrl, remindersEnabled, pendingEmail }` (in `/me`, register and login). `name` stays and always equals "firstName lastName".
 
@@ -47,9 +52,9 @@ Live docs (local): `http://localhost:8000/docs/api` · OpenAPI JSON: `/docs/api.
 | Mobile number | `mobile` | Australian mobile. Send it as typed (`0412 345 678`, `+61 412 345 678`); it is saved and returned as `+61412345678`. `null` clears it. Otherwise `422` (`field: mobile`) "Enter an Australian mobile number, like 0412 345 678." |
 | Reminders | `remindersEnabled` | `true` / `false`. Default `true`. (Stored now; session reminders aren't sent yet.) |
 | Member since | `createdAt` | Read-only |
-| Profile photo | `photoUrl` | Read-only here; see "Profile photo" below. `null` = show initials |
+| Profile photo | `photo` (send) / `photoUrl` (returned) | See "Profile photo" below. `photoUrl: null` = show initials |
 
-**Profile photo:** `POST /me/photo` as `multipart/form-data` with one file field `photo` (JPG, PNG or WebP, up to 8 MB; on iOS pick as JPEG, HEIC isn't accepted). The server crops it to a square, resizes it to 512×512 and strips metadata such as location, then returns `user` with the new `photoUrl`. `DELETE /me/photo` removes it (`photoUrl: null`). Each upload gets a new URL, so the image can be cached forever; load it without an auth header. Errors: `422 invalid_photo` / `validation_failed` (`field: photo`), `429` (more than 20 uploads an hour), `503 photo_unavailable`.
+**Profile photo:** add a `photo` file to the `POST /me` form-data (JPG, PNG or WebP, up to 8 MB; on iOS pick as JPEG, HEIC isn't accepted). The server crops it to a square, resizes it to 512×512 and strips metadata such as location; the response has the new `photoUrl`. To remove the photo, send `removePhoto: true` (`photoUrl` becomes `null`). Each upload gets a new URL, so the image can be cached forever; load it without an auth header. Errors: `422 invalid_photo` / `validation_failed` (`field: photo`), `429` (more than 20 uploads an hour), `503 photo_unavailable`.
 
 **Email change:** sending a new `email` doesn't change it yet. The server emails a confirmation link (60 minutes) to the new address and returns `pendingEmail: "new@…"`; `email` stays the old one, and the user keeps signing in with it. Show "We've sent a link to {pendingEmail}". When the link is opened, `email` becomes the new address and `pendingEmail` goes back to `null` (refresh with `GET /me`). Sending the current email again cancels the change. Errors: `409 email_taken` (`field: email`), `429 rate_limited` (more than 5 changes an hour).
 

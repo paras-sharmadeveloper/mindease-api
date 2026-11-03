@@ -34,12 +34,9 @@ Route::post('webhooks/stripe', StripeWebhookController::class);
 // ---- Everything else needs Authorization: Bearer <access token> ------------------------
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('me', [MeController::class, 'show']);
-    Route::patch('me', [MeController::class, 'update']);
-    Route::post('me', [MeController::class, 'update']); // same, for multipart/form-data with a photo
+    Route::post('me', [MeController::class, 'update']); // the one profile update: JSON, or form-data with a photo
     Route::delete('me', [MeController::class, 'destroy']);
     Route::put('me/password', [MeController::class, 'password'])->middleware('throttle:auth-general');
-    Route::post('me/photo', [MeController::class, 'uploadPhoto'])->middleware('throttle:photo');
-    Route::delete('me/photo', [MeController::class, 'deletePhoto']);
 
     // Content (cacheable: ETag / If-None-Match, X-Content-Version)
     Route::get('config', [ContentController::class, 'config']);

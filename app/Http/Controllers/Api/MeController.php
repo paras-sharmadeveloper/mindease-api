@@ -35,12 +35,13 @@ class MeController extends Controller
     /**
      * Update my profile.
      *
-     * Send only the fields that changed: `firstName`, `lastName`, `preferredName` ("What should we call you?"),
+     * The one endpoint for the profile screen's "Save changes". Send only the fields that changed:
+     * `firstName`, `lastName`, `preferredName` ("What should we call you?"), `email`,
      * `mobile` (or `phone`; Australian mobile, e.g. `0412 345 678`; saved and returned as `+61412345678`; `null` clears it),
-     * `remindersEnabled`, `email` and `photo`.
+     * `remindersEnabled`, `photo` (file: JPG, PNG or WebP, up to 8 MB) and `removePhoto: true`.
      *
-     * JSON with `PATCH /me`, or `multipart/form-data` with `POST /me` to include a `photo` file in the same request
-     * (JPG, PNG or WebP, up to 8 MB). Nothing is saved if any field is invalid.
+     * Send JSON, or `multipart/form-data` when it includes a `photo`. The photo is cropped to a square, resized to
+     * 512x512 and stripped of metadata such as location. Nothing is saved if any field is invalid.
      * Returns the full `user`, including `firstName`, `lastName`, `email`, `mobile` and `photoUrl`.
      *
      * Changing `email` doesn't change it straight away: a confirmation link is emailed to the new address and the
@@ -48,19 +49,16 @@ class MeController extends Controller
      */
     public function update(Request $request, ProfilePhoto $photos): UserResource
     {
-        // PHP doesn't read form-data on PATCH, so the fields would silently be empty. Say so instead.
-        if ($request->isMethod('PATCH') && str_contains((string) $request->header('Content-Type'), 'multipart/form-data')) {
-            throw new ApiException('use_post_for_form_data', 'Send form-data (with a photo) to POST /me. PATCH /me takes JSON.', 415);
-        }
-
         // Aliases and form-data values: `phone` = `mobile`; "true"/"false" strings for remindersEnabled.
         if ($request->has('phone') && ! $request->has('mobile')) {
             $request->merge(['mobile' => $request->input('phone')]);
         }
-        if (is_string($request->input('remindersEnabled'))) {
-            $flag = filter_var($request->input('remindersEnabled'), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
-            if ($flag !== null) {
-                $request->merge(['remindersEnabled' => $flag]);
+        foreach (['remindersEnabled', 'removePhoto'] as $key) {
+            if (is_string($request->input($key))) {
+                $flag = filter_var($request->input($key), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+                if ($flag !== null) {
+                    $request->merge([$key => $flag]);
+                }
             }
         }
         foreach (['firstName', 'lastName', 'preferredName', 'name', 'email'] as $key) {
@@ -81,6 +79,7 @@ class MeController extends Controller
             'remindersEnabled' => ['sometimes', 'boolean'],
             'email' => ['sometimes', 'required', 'string', 'email:rfc', 'max:255'],
             'photo' => ['sometimes', 'file', 'max:8192'],
+            'removePhoto' => ['sometimes', 'boolean'],
         ], [
             'firstName.required' => 'Please enter your first name.',
             'name.required' => 'Please enter your name.',
@@ -88,13 +87,23 @@ class MeController extends Controller
             'email.required' => 'Please enter your email.',
             'email.email' => 'Please enter a valid email address.',
             'photo.file' => 'Choose a photo to upload.',
+            'photo.uploaded' => 'Choose a photo to upload.',
             'photo.max' => 'Choose a photo under 8 MB.',
         ]);
 
-        // Check the photo before anything is saved, so a bad photo doesn't leave a half-saved profile.
-        $jpeg = $request->hasFile('photo') ? $photos->encode($request->file('photo')) : null;
-
         $user = $request->user();
+
+        // Check the photo before anything is saved, so a bad photo doesn't leave a half-saved profile.
+        $jpeg = null;
+        if ($request->hasFile('photo')) {
+            $key = 'photo:'.$user->id;
+            if (RateLimiter::tooManyAttempts($key, 20)) {
+                throw new ApiException('rate_limited', 'Too many photo uploads. Please wait a while and try again.', 429, 'photo');
+            }
+            RateLimiter::hit($key, 3600);
+            $jpeg = $photos->encode($request->file('photo'));
+        }
+
         $columns = ['firstName' => 'first_name', 'lastName' => 'last_name', 'preferredName' => 'preferred_name', 'mobile' => 'mobile', 'remindersEnabled' => 'reminders_enabled'];
         foreach ($columns as $key => $column) {
             if (array_key_exists($key, $data)) {
@@ -110,6 +119,8 @@ class MeController extends Controller
         $user->save();
         if ($jpeg !== null) {
             $photos->store($user, $jpeg);
+        } elseif (! empty($data['removePhoto'])) {
+            $photos->remove($user);
         }
         if ($notifyEmail) {
             Notification::route('mail', $notifyEmail)->notify(new VerifyNewEmailNotification($user, $notifyEmail));
@@ -157,36 +168,6 @@ class MeController extends Controller
         $user->pending_email = $email;
 
         return $email;
-    }
-
-    /**
-     * Upload my profile photo.
-     *
-     * `multipart/form-data` with a `photo` file: JPG, PNG or WebP, up to 8 MB. The server crops it to a square,
-     * resizes it to 512x512 and removes photo metadata (such as location). Returns `user` with the new `photoUrl`;
-     * the URL changes on every upload, so it is safe to cache.
-     */
-    public function uploadPhoto(Request $request, ProfilePhoto $photos): UserResource
-    {
-        $request->validate(
-            ['photo' => ['required', 'file', 'max:8192']],
-            ['photo.required' => 'Choose a photo to upload.', 'photo.file' => 'Choose a photo to upload.', 'photo.max' => 'Choose a photo under 8 MB.'],
-        );
-        $photos->replace($request->user(), $request->file('photo'));
-
-        return new UserResource($request->user());
-    }
-
-    /**
-     * Remove my profile photo.
-     *
-     * Returns `user` with `photoUrl: null`.
-     */
-    public function deletePhoto(Request $request, ProfilePhoto $photos): UserResource
-    {
-        $photos->remove($request->user());
-
-        return new UserResource($request->user());
     }
 
     /**
