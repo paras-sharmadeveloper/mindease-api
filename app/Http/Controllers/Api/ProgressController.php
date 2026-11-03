@@ -8,12 +8,18 @@ use App\Services\ContentRepository;
 use App\Services\Progress\ProgressEventHandler;
 use App\Services\Progress\ProgressPresenter;
 use App\Services\Progress\ProgressRepository;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+#[Group('Program progress', 'The user\'s progress through a program. The app sends events; the server decides completion and points.', weight: 6)]
 class ProgressController extends Controller
 {
-    /** ProgramProgress for the signed-in user. */
+    /**
+     * Get my program progress.
+     *
+     * Unlocked and completed phases, lesson/video/activity/quiz state, points and `programCompletedAt`.
+     */
     public function show(Request $request, string $programId, ContentRepository $content, ProgressRepository $repository, ProgressPresenter $presenter): JsonResponse
     {
         $program = $content->program($programId);
@@ -25,7 +31,10 @@ class ProgressController extends Controller
     }
 
     /**
-     * Record one progress event. Requires an `Idempotency-Key` header (UUID); replays return the same result.
+     * Send a progress event.
+     *
+     * One endpoint for `lesson_read`, `video_progress`, `activity_save` and `quiz_submit`.
+     * Requires an `Idempotency-Key` header (UUID); retries with the same key return the same result.
      *
      * Returns { progress: ProgramProgress, completion: PhaseCompletion | null }.
      * 403 phase_locked if the phase isn't unlocked yet.

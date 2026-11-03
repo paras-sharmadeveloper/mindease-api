@@ -33,6 +33,8 @@ Owner: Paras (ThunderClap). Talk to Paras in Hinglish; client-facing text in for
 | Booking: slots (therapist tz, DST-safe), lifecycle, refunds | `app/Services/Booking/SlotService.php`, `BookingService.php`, `BookingPresenter.php` |
 | Stripe (only via `PaymentGateway`; tests bind `tests/Fakes/FakePaymentGateway`) + webhook | `app/Services/Payments/`, `app/Http/Controllers/Webhooks/StripeWebhookController.php` |
 | Zoom Video SDK JWT | `app/Services/Video/ZoomVideoToken.php` |
+| API docs (Scramble): **two separate documents**. Mobile app `/docs/api` (everything except `/panel/*` and webhooks), web panel `/docs/panel` (`/panel/*`, `/auth/login|refresh|logout`, Stripe webhook). Titles = first docblock paragraph; groups = `#[Group]` on controllers | `app/Providers/AppServiceProvider.php`, `config/scramble.php` |
+| Admin content editing (programs, onboarding questionnaire); saves go through `ContentImporter::saveProgram/saveDocument`, same checks as the import command | `app/Http/Controllers/Panel/ProgramController.php`, `QuestionnaireController.php` |
 | Developer portal `/developers` (guides, reference, Try-it console; endpoint data lives in the page's `GROUPS` array — update it when an endpoint changes) | `resources/views/developers.blade.php`, `routes/web.php`, flag `MINDEASE_DEVELOPER_DOCS` |
 | Config knobs | `config/mindease.php` (`bookings.*`), `config/services.php` (`stripe`, `zoom`) |
 
@@ -61,7 +63,7 @@ php artisan mindease:create-admin you@example.com   # first web-panel admin on a
 
 ## Status (v1 core)
 
-Done: auth (register/login/refresh rotation/reset + confirm/logout/delete me), content endpoints with ETag, assessment, progress events + rules, points, idempotency, tests, OpenAPI.
+Done: auth (register/login/refresh rotation/reset + verify + confirm/logout/delete me, PATCH /me name, PUT /me/password), content endpoints with ETag, assessment, progress events + rules, points, idempotency, tests, OpenAPI.
 
 Open items:
 1. Get `user_progress.dart` from the mobile team → match `ProgressPresenter` output to `UserProgress.toJson()` exactly.
@@ -74,6 +76,7 @@ Open items:
 
 **Built:** mobile booking API (therapists, slots, bookings, cancel + refunds, Stripe webhook, video token), `mindease:expire-booking-holds` (scheduled every minute), `users.role`, demo therapist seed, `tests/Feature/BookingTest.php`.
 **Web panel (built):** React SPA in `../mindease-web` (not inside Laravel). API: `/v1/panel/*` in `routes/api.php`, `app/Http/Controllers/Panel/`, shapes in `app/Services/Booking/PanelPresenter.php`, tests `tests/Feature/PanelTest.php`. Same Sanctum + rotating refresh tokens as the app, gated by `role:admin,therapist` (`EnsureRole`). Admin: therapist CRUD (temporary password, price, active), all bookings, no client notes, no video join. Therapist: own profile/hours/time off/bookings, host video token, completed/no-show, cancel = full refund (`cancel_reason: therapist`). CORS origins: `CORS_ALLOWED_ORIGINS`.
+**Admin content (built):** Programs page (list, show/hide/coming soon, order, details, full JSON replace with id-stability guard, add program: starts hidden) and Questionnaire editor (add/edit/reorder/remove questions; ids and option values lock once saved). Edits are live in the app. ⚠ `php artisan mindease:import-content` overwrites panel edits with the files in `database/content`, so don't run it on a server once admins edit content there.
 **Not built yet:** therapist payouts, booking emails/reminders, admin managing other admins. A therapist who has bookings can't use `DELETE /me` (bookings restrict-on-delete): deactivate them instead. Booking confirms only from the webhook: never add a client-side confirm path.
 Price/refund/session-length values in `config/mindease.php` are placeholders until the client confirms.
 

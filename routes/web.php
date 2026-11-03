@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => response()->json(['name' => 'MindEase API', 'version' => 'v1', 'docs' => '/docs/api', 'developers' => '/developers']));
+Route::get('/', fn () => response()->json(['name' => 'MindEase API', 'version' => 'v1', 'docs' => '/docs/api', 'panelDocs' => '/docs/panel', 'developers' => '/developers']));
 
 // Developer portal: guides + reference + "Try it" console for the mobile team.
 Route::get('developers', function () {

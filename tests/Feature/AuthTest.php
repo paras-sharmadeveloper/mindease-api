@@ -119,6 +119,76 @@ class AuthTest extends ApiTestCase
         $this->postJson('/v1/auth/login', ['email' => 'asha@example.com', 'password' => 'newsecret1'])->assertOk();
     }
 
+    public function test_password_reset_verify_checks_the_link_without_using_it(): void
+    {
+        $this->register();
+        $user = User::where('email', 'asha@example.com')->first();
+        $token = Password::broker()->createToken($user);
+
+        $this->postJson('/v1/auth/password-reset/verify', ['email' => 'asha@example.com', 'token' => 'wrong'])
+            ->assertStatus(422)->assertJsonPath('error.code', 'invalid_reset_token')->assertJsonPath('error.field', 'token');
+        $this->postJson('/v1/auth/password-reset/verify', ['email' => 'ghost@example.com', 'token' => $token])
+            ->assertStatus(422)->assertJsonPath('error.code', 'invalid_reset_token');
+        $this->postJson('/v1/auth/password-reset/verify', ['email' => 'Asha@Example.com', 'token' => $token])->assertNoContent();
+
+        // Still usable afterwards.
+        $this->postJson('/v1/auth/password-reset/confirm', [
+            'email' => 'asha@example.com', 'token' => $token, 'password' => 'newsecret1',
+        ])->assertNoContent();
+        $this->postJson('/v1/auth/password-reset/verify', ['email' => 'asha@example.com', 'token' => $token])->assertStatus(422);
+    }
+
+    public function test_password_reset_verify_rejects_an_expired_link(): void
+    {
+        $this->register();
+        $token = Password::broker()->createToken(User::where('email', 'asha@example.com')->first());
+
+        $this->travel(61)->minutes();
+        $this->postJson('/v1/auth/password-reset/verify', ['email' => 'asha@example.com', 'token' => $token])
+            ->assertStatus(422)->assertJsonPath('error.code', 'invalid_reset_token');
+    }
+
+    public function test_update_profile_name(): void
+    {
+        $access = $this->register()->json('accessToken');
+        $auth = ['Authorization' => "Bearer {$access}"];
+
+        $this->patchJson('/v1/me', ['name' => '  Asha P  ', 'email' => 'hacker@example.com'], $auth)->assertOk()
+            ->assertJsonPath('name', 'Asha P')->assertJsonPath('email', 'asha@example.com');
+        $this->patchJson('/v1/me', ['name' => '   '], $auth)
+            ->assertStatus(422)->assertJsonPath('error.code', 'validation_failed')->assertJsonPath('error.field', 'name');
+        $this->getJson('/v1/me', $auth)->assertJsonPath('name', 'Asha P');
+    }
+
+    public function test_change_password_keeps_this_device_and_signs_out_others(): void
+    {
+        $here = $this->register()->json();
+        $other = $this->postJson('/v1/auth/login', ['email' => 'asha@example.com', 'password' => 'secret123'])->json();
+        $auth = ['Authorization' => "Bearer {$here['accessToken']}"];
+
+        $this->putJson('/v1/me/password', ['currentPassword' => 'wrong-pass', 'password' => 'newsecret1'], $auth)
+            ->assertStatus(422)->assertJsonPath('error.code', 'invalid_credentials')->assertJsonPath('error.field', 'currentPassword');
+        $this->putJson('/v1/me/password', ['currentPassword' => 'secret123', 'password' => 'secret123'], $auth)
+            ->assertStatus(422)->assertJsonPath('error.field', 'password');
+        $this->putJson('/v1/me/password', ['currentPassword' => 'secret123', 'password' => 'short'], $auth)
+            ->assertStatus(422)->assertJsonPath('error.field', 'password');
+
+        $resetToken = Password::broker()->createToken(User::where('email', 'asha@example.com')->first());
+        $this->putJson('/v1/me/password', ['currentPassword' => 'secret123', 'password' => 'newsecret1'], $auth)->assertNoContent();
+
+        $this->app['auth']->forgetGuards();
+        $this->getJson('/v1/me', $auth)->assertOk();
+        $this->postJson('/v1/auth/refresh', ['refreshToken' => $here['refreshToken']])->assertOk();
+
+        $this->app['auth']->forgetGuards();
+        $this->getJson('/v1/me', ['Authorization' => "Bearer {$other['accessToken']}"])->assertUnauthorized();
+        $this->postJson('/v1/auth/refresh', ['refreshToken' => $other['refreshToken']])->assertUnauthorized();
+
+        $this->postJson('/v1/auth/password-reset/verify', ['email' => 'asha@example.com', 'token' => $resetToken])->assertStatus(422);
+        $this->postJson('/v1/auth/login', ['email' => 'asha@example.com', 'password' => 'secret123'])->assertUnauthorized();
+        $this->postJson('/v1/auth/login', ['email' => 'asha@example.com', 'password' => 'newsecret1'])->assertOk();
+    }
+
     public function test_login_is_rate_limited(): void
     {
         foreach (range(1, 5) as $i) {

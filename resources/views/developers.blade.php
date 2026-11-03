@@ -322,7 +322,7 @@ final completion = r.data['completion']; // null or { phaseId, pointsAwarded, ..
       <h3>Splash and logout</h3>
       <p>On the splash screen, call <code>GET /me</code> when a refresh token exists. The interceptor refreshes the access token when needed. To log out, call <code>POST /auth/logout</code> with the refresh token, then clear storage. Clear storage even if the call fails.</p>
       <h3>Password reset</h3>
-      <p><code>POST /auth/password-reset</code> always returns <code>202</code>. The email links to <code>mindease://reset-password?token=…&amp;email=…</code>. Handle that deep link, ask for a new password and call <code>POST /auth/password-reset/confirm</code>. The confirm call signs out every device.</p>
+      <p><code>POST /auth/password-reset</code> always returns <code>202</code>. The email links to <code>mindease://reset-password?token=…&amp;email=…</code>. Handle that deep link, check it with <code>POST /auth/password-reset/verify</code>, ask for a new password and call <code>POST /auth/password-reset/confirm</code>. The confirm call signs out every device.</p>
     </div>
     <div class="code-col">
       <div class="codebox"><div class="head"><span class="title">auth_interceptor.dart · single-flight refresh</span><button class="copy">Copy</button></div><pre class="js-hl" data-lang="dart">class AuthInterceptor extends QueuedInterceptor {
@@ -416,7 +416,7 @@ on DioException catch (e) {
     <div class="tbl-wrap"><table>
       <tr><th>Endpoint</th><th>Limit</th></tr>
       <tr><td><code>POST /auth/login</code></td><td>5 per minute per email, and 30 per minute per IP</td></tr>
-      <tr><td><code>POST /auth/password-reset</code>, <code>/confirm</code></td><td>5 per hour per email, and 10 per minute per IP</td></tr>
+      <tr><td><code>POST /auth/password-reset</code>, <code>/verify</code>, <code>/confirm</code></td><td>5 per hour per email, and 10 per minute per IP</td></tr>
       <tr><td>Other <code>/auth/*</code></td><td>30 per minute per IP</td></tr>
       <tr><td>Everything else</td><td>180 per minute per user</td></tr>
     </table></div>
@@ -786,12 +786,26 @@ const GROUPS = [
     params: [['email', 'body', 'string', true, 'From the link.'], ['token', 'body', 'string', true, 'From the link.'], ['password', 'body', 'string', true, 'At least 8 characters.']],
     body: { email: 'demo@mindease.test', token: '<token from link>', password: 'new-password-123' }, response: [204, null],
     errors: [[422, 'invalid_reset_token', 'Expired or already used.']] },
+  { id: 'password-reset-verify', method: 'POST', path: '/auth/password-reset/verify', title: 'Check a reset link', auth: false,
+    desc: 'Call it when the reset deep link opens, before asking for a new password. It doesn\'t use up the token. On 422, show "link expired" and offer to send a new one.',
+    params: [['email', 'body', 'string', true, 'From the link.'], ['token', 'body', 'string', true, 'From the link.']],
+    body: { email: 'demo@mindease.test', token: '<token from link>' }, response: [204, null],
+    errors: [[422, 'invalid_reset_token', 'Expired, already used or wrong email.'], [429, 'rate_limited', '5 per hour per email']] },
   { id: 'logout', method: 'POST', path: '/auth/logout', title: 'Log out', auth: false,
     desc: 'Revokes this sign-in\'s tokens. Clear local storage even if the call fails.',
     params: [['refreshToken', 'body', 'string', true, '']], body: { refreshToken: '<refreshToken>' }, response: [204, null], errors: [] },
  ]},
  { id: 'account', title: 'Account', intro: 'The signed-in user.', endpoints: [
   { id: 'me', method: 'GET', path: '/me', title: 'Get the current user', auth: true, desc: 'Use it on the splash screen to check the session, and on Profile.', response: [200, USER], errors: [[401, 'unauthenticated', '']] },
+  { id: 'update-me', method: 'PATCH', path: '/me', title: 'Update the profile', auth: true,
+    desc: 'Changes the name. The email can\'t be changed yet.',
+    params: [['name', 'body', 'string', true, 'Up to 100 characters.']], body: { name: 'Asha Patel' }, response: [200, USER],
+    errors: [[422, 'validation_failed', 'Name is empty.']] },
+  { id: 'change-password', method: 'PUT', path: '/me/password', title: 'Change the password', auth: true,
+    desc: 'For a signed-in user who knows their current password. This device stays signed in; every other device is signed out.',
+    params: [['currentPassword', 'body', 'string', true, ''], ['password', 'body', 'string', true, 'At least 8 characters, different from the current one.']],
+    body: { currentPassword: 'password123', password: 'new-password-123' }, response: [204, null],
+    errors: [[422, 'invalid_credentials', 'Current password is wrong (field: currentPassword).'], [422, 'validation_failed', 'New password too short or unchanged (field: password).']] },
   { id: 'delete-me', method: 'DELETE', path: '/me', title: 'Delete the account', auth: true, danger: true,
     desc: 'Permanently deletes the user and <b>all</b> their data. This can\'t be undone. Required by Apple 5.1.1(v).', response: [204, null], errors: [] },
  ]},

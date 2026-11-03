@@ -20,7 +20,18 @@ Live docs (local): `http://localhost:8000/docs/api` · OpenAPI JSON: `/docs/api.
 - Always store the **new** refresh token from `/auth/refresh`. Reusing an old one revokes the whole session (stolen-token protection), so **run refresh calls one at a time** (single-flight). Don't fire two refreshes in parallel.
   - After a reuse, every token from that sign-in (including the newest one) returns `401 invalid_refresh_token`. Send the user to sign in again.
 - **Added:** `POST /auth/password-reset/confirm { email, token, password }` → `204`, or `422 invalid_reset_token`. The reset email links to `mindease://reset-password?token=…&email=…` (configurable). It signs out all devices.
+- **Added:** `POST /auth/password-reset/verify { email, token }` → `204` if the link is still valid, or `422 invalid_reset_token` (`field: token`). It does **not** use up the token. Call it when the reset deep link opens: on `422` show "This link has expired" with a button to request a new one, instead of letting the user type a new password first. Shares the reset rate limit (5 per hour per email).
 - **Added:** `GET /me` → `user` (handy for a splash session check).
+
+## Account (new)
+
+| Method | Path | Body | Returns |
+|---|---|---|---|
+| PATCH | `/me` | `{ name }` | `200 user`. Only `name` can change; any other field is ignored. Empty name → `422 validation_failed` (`field: name`) |
+| PUT | `/me/password` | `{ currentPassword, password }` | `204`. Wrong current password → `422 invalid_credentials` (`field: currentPassword`). New password under 8 characters or the same as the current one → `422 validation_failed` (`field: password`) |
+
+- Changing the password keeps **this** device signed in (its access and refresh tokens keep working) and signs out every other device. Old reset links stop working.
+- Changing the email isn't supported yet: it needs an email verification step, which is waiting on the client.
 
 ## Content
 

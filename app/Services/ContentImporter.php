@@ -47,16 +47,17 @@ class ContentImporter
         }
 
         return match (true) {
-            $name === 'app_config' => $this->storeDocument(ContentRepository::CONFIG, $this->checkConfig($data)),
-            $name === 'onboarding_questionnaire' => $this->storeDocument(ContentRepository::ONBOARDING, $data),
-            str_starts_with($name, 'support_resources_') => $this->storeDocument(
+            $name === 'app_config' => $this->saveDocument(ContentRepository::CONFIG, $this->checkConfig($data)),
+            $name === 'onboarding_questionnaire' => $this->saveDocument(ContentRepository::ONBOARDING, $data),
+            str_starts_with($name, 'support_resources_') => $this->saveDocument(
                 'support_resources.'.strtolower(substr($name, strlen('support_resources_'))), $data),
-            str_ends_with($name, '_program') => $this->storeProgram($data, $force),
+            str_ends_with($name, '_program') => $this->saveProgram($data, $force),
             default => "skipped {$name}.json (unknown file)",
         };
     }
 
-    private function storeDocument(string $key, array $data): string
+    /** Also used by the admin panel (questionnaire editor). */
+    public function saveDocument(string $key, array $data): string
     {
         $json = $this->encode($data);
 
@@ -69,7 +70,11 @@ class ContentImporter
         return "document {$key}";
     }
 
-    private function storeProgram(array $data, bool $force): string
+    /**
+     * Also used by the admin panel. $meta overrides the list columns (status, display_order, cover_image)
+     * for programs whose JSON doesn't carry them.
+     */
+    public function saveProgram(array $data, bool $force = false, array $meta = []): string
     {
         $this->checkProgram($data);
         $id = $data['id'];
@@ -84,9 +89,9 @@ class ContentImporter
         Program::updateOrCreate(['id' => $id], [
             'title' => $data['title'],
             'short' => $data['short'] ?? null,
-            'status' => $data['status'] ?? $existing?->status ?? 'active',
-            'display_order' => $data['displayOrder'] ?? $existing?->display_order ?? 0,
-            'cover_image' => $data['coverImage'] ?? $existing?->cover_image,
+            'status' => $meta['status'] ?? $data['status'] ?? $existing?->status ?? 'active',
+            'display_order' => $meta['display_order'] ?? $data['displayOrder'] ?? $existing?->display_order ?? 0,
+            'cover_image' => array_key_exists('cover_image', $meta) ? $meta['cover_image'] : ($data['coverImage'] ?? $existing?->cover_image),
             'content_version' => $data['contentVersion'] ?? null,
             'body' => $json,
             'etag' => ContentResponse::etagFor($json),

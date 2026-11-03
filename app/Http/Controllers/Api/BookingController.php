@@ -10,14 +10,18 @@ use App\Services\Booking\BookingPresenter;
 use App\Services\Booking\BookingService;
 use App\Services\Video\ZoomVideoToken;
 use Carbon\CarbonImmutable;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+#[Group('Bookings', 'Book, pay for, cancel and join therapy sessions.', weight: 9)]
 class BookingController extends Controller
 {
     /**
-     * Hold a slot and start payment. Requires an `Idempotency-Key` header.
+     * Book a session.
+     *
+     * Holds the slot and starts payment. Requires an `Idempotency-Key` header.
      *
      * Returns `201 { booking, payment: { clientSecret, publishableKey } }`. Pay with Stripe's
      * PaymentSheet; the booking becomes `confirmed` when Stripe tells the server, so poll
@@ -50,7 +54,11 @@ class BookingController extends Controller
         ], 201);
     }
 
-    /** The user's bookings. `?scope=upcoming|past` (default: all, newest start first). */
+    /**
+     * List my bookings.
+     *
+     * `?scope=upcoming|past` (default: all, newest start first).
+     */
     public function index(Request $request, BookingPresenter $presenter): JsonResponse
     {
         $scope = $request->validate(['scope' => ['nullable', 'in:upcoming,past']])['scope'] ?? null;
@@ -66,12 +74,21 @@ class BookingController extends Controller
         return response()->json($query->get()->map(fn (Booking $b) => $presenter->booking($b)));
     }
 
+    /**
+     * Get a booking.
+     *
+     * Poll this after the Stripe PaymentSheet closes until `status` is `confirmed`.
+     */
     public function show(Request $request, string $bookingId, BookingPresenter $presenter): JsonResponse
     {
         return response()->json($presenter->booking($this->owned($request, $bookingId)));
     }
 
-    /** Cancel. Confirmed bookings are refunded per the refund rule (see `refundIfCancelledCents`). Safe to retry. */
+    /**
+     * Cancel a booking.
+     *
+     * Confirmed bookings are refunded per the refund rule (see `refundIfCancelledCents`). Safe to retry.
+     */
     public function cancel(Request $request, string $bookingId, BookingService $bookings, BookingPresenter $presenter): JsonResponse
     {
         $booking = $bookings->cancel($this->owned($request, $bookingId));
@@ -80,6 +97,8 @@ class BookingController extends Controller
     }
 
     /**
+     * Get a video call token.
+     *
      * Zoom Video SDK token to join the session in the app. Confirmed bookings only, from
      * a few minutes before the start until the end. Returns { token, sessionName, userIdentity, role, expiresAt }.
      */

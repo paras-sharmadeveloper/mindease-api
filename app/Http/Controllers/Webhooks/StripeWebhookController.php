@@ -6,6 +6,7 @@ use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\StripeWebhookEvent;
 use App\Services\Booking\BookingService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -17,8 +18,16 @@ use Stripe\Webhook;
  * Each event id is applied once. Handlers are idempotent too, so a retry after a crash is safe.
  * Subscribe to: payment_intent.succeeded, payment_intent.payment_failed, payment_intent.canceled, charge.refunded.
  */
+#[Group('Stripe webhook (server only)', 'Called by Stripe, never by the app or the panel.', weight: 99)]
 class StripeWebhookController extends Controller
 {
+    /**
+     * Stripe webhook.
+     *
+     * Called by Stripe only, never by the app or the panel. Verified by the `Stripe-Signature` header.
+     *
+     * @unauthenticated
+     */
     public function __invoke(Request $request, BookingService $bookings): Response
     {
         $secret = config('services.stripe.webhook_secret')

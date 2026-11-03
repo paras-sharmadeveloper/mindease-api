@@ -6,15 +6,21 @@ use App\Models\Therapist;
 use App\Models\User;
 use App\Services\Booking\PanelPresenter;
 use App\Services\TokenService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
+#[Group('Therapists', 'Therapist profiles. Admins manage everyone; a therapist edits their own profile.', weight: 4)]
 class TherapistController extends PanelController
 {
-    /** Admin: every therapist, active or not. */
+    /**
+     * List therapists (admin).
+     *
+     * Every therapist, active or not.
+     */
     public function index(PanelPresenter $presenter): JsonResponse
     {
         $therapists = Therapist::with('user')->get()->sortBy('user.name')->values();
@@ -23,7 +29,9 @@ class TherapistController extends PanelController
     }
 
     /**
-     * Admin: create a therapist login + profile with a temporary password (they change it after signing in).
+     * Add a therapist (admin).
+     *
+     * Creates a therapist login and profile with a temporary password (they change it after signing in).
      * Starts with no availability, so no slots are offered until hours are added.
      */
     public function store(Request $request, PanelPresenter $presenter): JsonResponse
@@ -44,12 +52,19 @@ class TherapistController extends PanelController
         return response()->json($presenter->therapist($therapist->refresh()->load('user')), 201);
     }
 
+    /**
+     * Get a therapist.
+     *
+     * Admins can open any therapist; a therapist only their own profile.
+     */
     public function show(Request $request, string $therapistId, PanelPresenter $presenter): JsonResponse
     {
         return response()->json($presenter->therapist($this->therapistFor($request, $therapistId)));
     }
 
     /**
+     * Update a therapist.
+     *
      * Admin: every field, plus `password` to set a new temporary password (signs the therapist out everywhere).
      * Therapist: own bio, specialties, photo and timezone only.
      */

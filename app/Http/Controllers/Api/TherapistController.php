@@ -9,13 +9,19 @@ use App\Services\Booking\BookingPresenter;
 use App\Services\Booking\SlotService;
 use App\Support\Iso;
 use Carbon\CarbonImmutable;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+#[Group('Therapists', 'Therapists users can book, and their free slots.', weight: 8)]
 class TherapistController extends Controller
 {
-    /** Active therapists. */
+    /**
+     * List therapists.
+     *
+     * Active therapists, sorted by name.
+     */
     public function index(BookingPresenter $presenter): JsonResponse
     {
         $therapists = Therapist::with('user')->where('active', true)->get()->sortBy('user.name')->values();
@@ -23,7 +29,11 @@ class TherapistController extends Controller
         return response()->json($therapists->map(fn (Therapist $t) => $presenter->therapist($t)));
     }
 
-    /** One active therapist (profile screen). Same shape as a list item. */
+    /**
+     * Get a therapist.
+     *
+     * One active therapist for the profile screen. Same shape as a list item.
+     */
     public function show(string $therapistId, BookingPresenter $presenter): JsonResponse
     {
         abort_unless(Str::isUuid($therapistId), 404);
@@ -34,6 +44,8 @@ class TherapistController extends Controller
     }
 
     /**
+     * List available slots.
+     *
      * Bookable start times (UTC) between `from` and `to` (ISO 8601; default now -> +14 days, max 31 days).
      * Returns { therapistId, sessionMinutes, slots: [{ startsAt, endsAt }] }.
      */

@@ -7,14 +7,18 @@ use App\Models\Booking;
 use App\Services\Booking\BookingService;
 use App\Services\Booking\PanelPresenter;
 use App\Services\Video\ZoomVideoToken;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+#[Group('Sessions', 'Booked sessions: list, cancel, mark the outcome and join the call.', weight: 6)]
 class BookingController extends PanelController
 {
     /**
-     * ?scope=upcoming|past|all (default upcoming) &therapistId= (admin filter) &from=&to= (ISO, on startsAt).
+     * List sessions.
+     *
+     * `?scope=upcoming|past|all` (default upcoming), `&therapistId=` (admin filter), `&from=&to=` (ISO, on startsAt).
      * Therapists only ever see their own bookings. Unpaid holds are hidden.
      */
     public function index(Request $request, PanelPresenter $presenter): JsonResponse
@@ -47,12 +51,19 @@ class BookingController extends PanelController
         return response()->json($query->limit(500)->get()->map(fn (Booking $b) => $presenter->booking($b, $user)));
     }
 
+    /**
+     * Get a session.
+     */
     public function show(Request $request, string $bookingId, PanelPresenter $presenter): JsonResponse
     {
         return response()->json($presenter->booking($this->visible($request, $bookingId), $request->user()));
     }
 
-    /** Therapist or admin cancels: always a full refund to the client. */
+    /**
+     * Cancel a session.
+     *
+     * Therapist or admin cancels: always a full refund to the client.
+     */
     public function cancel(Request $request, string $bookingId, BookingService $bookings, PanelPresenter $presenter): JsonResponse
     {
         $booking = $bookings->cancel($this->visible($request, $bookingId), 'therapist');
@@ -60,7 +71,11 @@ class BookingController extends PanelController
         return response()->json($presenter->booking($booking->load(['user', 'therapist.user', 'payment']), $request->user()));
     }
 
-    /** { status: completed | no_show }. Only after the session has started. */
+    /**
+     * Mark a session completed or no-show.
+     *
+     * `{ status: completed | no_show }`. Only after the session has started.
+     */
     public function outcome(Request $request, string $bookingId, BookingService $bookings, PanelPresenter $presenter): JsonResponse
     {
         $status = $request->validate(['status' => ['required', 'in:'.Booking::COMPLETED.','.Booking::NO_SHOW]])['status'];
@@ -69,7 +84,11 @@ class BookingController extends PanelController
         return response()->json($presenter->booking($booking, $request->user()));
     }
 
-    /** Host token for Zoom Video SDK (Web). Only the booking's own therapist; admins can't join sessions. */
+    /**
+     * Get a host video token.
+     *
+     * Zoom Video SDK (Web) host token. Only the booking's own therapist; admins can't join sessions.
+     */
     public function videoToken(Request $request, string $bookingId, ZoomVideoToken $zoom): JsonResponse
     {
         $booking = $this->visible($request, $bookingId);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Assessment;
 use App\Support\Iso;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use stdClass;
@@ -13,15 +14,24 @@ use stdClass;
  * Questionnaire answers. SENSITIVE: encrypted at rest, owner-only (always the token's user),
  * never logged, never sent to analytics.
  */
+#[Group('Onboarding questionnaire', 'The onboarding questions (content) and the user\'s saved answers.', weight: 5)]
 class AssessmentController extends Controller
 {
-    /** { answers, step, completedAt, nextStepsSeen, questionnaireVersion } - defaults if nothing saved yet. */
+    /**
+     * Get my questionnaire answers.
+     *
+     * `{ answers, step, completedAt, nextStepsSeen, questionnaireVersion }`. Returns defaults before the first save.
+     */
     public function show(Request $request): JsonResponse
     {
         return response()->json($this->present($request->user()->assessment));
     }
 
-    /** Saved on every answer so the user can resume. Full replace of the document. */
+    /**
+     * Save my questionnaire answers.
+     *
+     * Full replace: send the whole document on every answer, so the user can resume where they left off.
+     */
     public function update(Request $request): JsonResponse
     {
         $data = $request->validate([

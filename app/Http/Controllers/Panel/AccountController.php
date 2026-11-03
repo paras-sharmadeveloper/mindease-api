@@ -4,21 +4,31 @@ namespace App\Http\Controllers\Panel;
 
 use App\Exceptions\ApiException;
 use App\Services\Booking\PanelPresenter;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
+#[Group('Panel account', 'The signed-in therapist or admin.', weight: 2)]
 class AccountController extends PanelController
 {
-    /** { user, role, therapist | null }. The panel calls this right after /auth/login. */
+    /**
+     * Get my panel account.
+     *
+     * `{ user, role, therapist | null }`. Call it right after `POST /auth/login`; app users (role `user`) get `403`.
+     */
     public function me(Request $request, PanelPresenter $presenter): JsonResponse
     {
         return response()->json($presenter->me($request->user()->load('therapist')));
     }
 
-    /** Change own password (therapists get a temporary one from an admin). */
+    /**
+     * Change my panel password.
+     *
+     * Therapists get a temporary password from an admin and change it here.
+     */
     public function password(Request $request): Response
     {
         $data = $request->validate([

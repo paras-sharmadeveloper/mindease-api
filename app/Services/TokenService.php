@@ -101,6 +101,18 @@ class TokenService
         $user->refreshTokens()->whereNull('revoked_at')->update(['revoked_at' => now()]);
     }
 
+    /** Sign out every other device, keeping the sign-in that owns $currentAccessTokenId (password change). */
+    public function revokeOtherSessions(User $user, ?int $currentAccessTokenId): void
+    {
+        $keepFamily = $currentAccessTokenId
+            ? RefreshToken::where('access_token_id', $currentAccessTokenId)->value('family_id')
+            : null;
+
+        $others = $user->refreshTokens()->when($keepFamily, fn ($q) => $q->where('family_id', '!=', $keepFamily));
+        $user->tokens()->when($currentAccessTokenId, fn ($q) => $q->whereKeyNot($currentAccessTokenId))->delete();
+        $others->whereNull('revoked_at')->update(['revoked_at' => now()]);
+    }
+
     private function deleteAccessToken(?int $id): void
     {
         if ($id) {

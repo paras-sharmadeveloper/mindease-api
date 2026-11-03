@@ -5,12 +5,19 @@ namespace App\Http\Controllers\Panel;
 use App\Models\Booking;
 use App\Models\Therapist;
 use App\Models\User;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+#[Group('Dashboard', 'Counts for the panel home page.', weight: 3)]
 class DashboardController extends PanelController
 {
-    /** Counts for the panel home. Scoped to the therapist's own bookings unless admin. */
+    /**
+     * Get dashboard counts.
+     *
+     * Session counts for the panel home, scoped to the therapist's own bookings unless admin.
+     * Admins also get app sign-up counts (`totalUsers`, `newUsersLast24Hours`, `newUsersLast7Days`, `newUsersLast30Days`).
+     */
     public function __invoke(Request $request): JsonResponse
     {
         $user = $request->user();

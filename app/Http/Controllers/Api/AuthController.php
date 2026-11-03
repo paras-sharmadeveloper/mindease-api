@@ -8,6 +8,7 @@ use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\TokenService;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
+#[Group('Auth', 'Sign up, sign in, refresh tokens, reset passwords and sign out. No bearer token needed.', weight: 1)]
 class AuthController extends Controller
 {
     /** Argon2id hash of a throwaway string; used to equalise timing for unknown emails. */
@@ -24,7 +26,9 @@ class AuthController extends Controller
     public function __construct(private TokenService $tokens) {}
 
     /**
-     * Register. 201 { user, accessToken, refreshToken }; 409 (field: email) if taken.
+     * Create an account.
+     *
+     * Returns `201 { user, accessToken, refreshToken }`. `409 email_taken` (field: email) if the email is already registered.
      *
      * @unauthenticated
      */
@@ -47,7 +51,10 @@ class AuthController extends Controller
     }
 
     /**
-     * Login. 401 uses one generic message so it never reveals which part was wrong.
+     * Sign in.
+     *
+     * Returns `{ user, accessToken, refreshToken }`. `401 invalid_credentials` uses one generic message, so it never reveals which part was wrong.
+     * The web panel signs in here too, then calls `GET /panel/me`.
      *
      * @unauthenticated
      */
@@ -77,7 +84,10 @@ class AuthController extends Controller
     }
 
     /**
-     * Exchange a refresh token for a new pair (the old refresh token stops working).
+     * Refresh tokens.
+     *
+     * Exchanges a refresh token for a new pair. The old refresh token stops working; reusing it signs out that whole session.
+     * Run one refresh at a time.
      *
      * @unauthenticated
      */
@@ -89,7 +99,10 @@ class AuthController extends Controller
     }
 
     /**
-     * Always 202, so the response never reveals whether an email exists.
+     * Request a password reset email.
+     *
+     * Always `202`, so the response never reveals whether an account exists. The email links to
+     * `mindease://reset-password?token=…&email=…`.
      *
      * @unauthenticated
      */
@@ -103,8 +116,34 @@ class AuthController extends Controller
     }
 
     /**
-     * Set a new password with the token from the reset email. Signs out every device.
-     * (Not in the v1 draft contract - added because reset needs a confirm step.)
+     * Check a password reset link.
+     *
+     * Call it when the reset link opens, before asking for a new password. `204` if the token is valid (it is not used up),
+     * `422 invalid_reset_token` if it is wrong, used or expired.
+     *
+     * @unauthenticated
+     */
+    public function verifyPasswordReset(Request $request): Response
+    {
+        $data = $request->validate([
+            'email' => ['required', 'string', 'email:rfc', 'max:255'],
+            'token' => ['required', 'string', 'max:200'],
+        ]);
+
+        $broker = Password::broker();
+        $user = $broker->getUser(['email' => Str::lower(trim($data['email']))]);
+
+        if (! $user || ! $broker->tokenExists($user, $data['token'])) {
+            throw new ApiException('invalid_reset_token', 'This reset link is invalid or has expired. Please request a new one.', 422, 'token');
+        }
+
+        return response()->noContent();
+    }
+
+    /**
+     * Set a new password (reset).
+     *
+     * Uses the `token` and `email` from the reset link. Signs out every device. `422 invalid_reset_token` if the link is wrong, used or expired.
      *
      * @unauthenticated
      */
@@ -132,7 +171,9 @@ class AuthController extends Controller
     }
 
     /**
-     * Revoke the session this refresh token belongs to. Always 204.
+     * Sign out.
+     *
+     * Revokes the session this refresh token belongs to. Always `204`; clear local tokens even if the call fails.
      *
      * @unauthenticated
      */

@@ -23,6 +23,7 @@ Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:auth-login');
     Route::post('refresh', [AuthController::class, 'refresh'])->middleware('throttle:auth-general');
     Route::post('password-reset', [AuthController::class, 'requestPasswordReset'])->middleware('throttle:auth-reset');
+    Route::post('password-reset/verify', [AuthController::class, 'verifyPasswordReset'])->middleware('throttle:auth-reset');
     Route::post('password-reset/confirm', [AuthController::class, 'confirmPasswordReset'])->middleware('throttle:auth-reset');
     Route::post('logout', [AuthController::class, 'logout'])->middleware('throttle:auth-general');
 });
@@ -33,7 +34,9 @@ Route::post('webhooks/stripe', StripeWebhookController::class);
 // ---- Everything else needs Authorization: Bearer <access token> ------------------------
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('me', [MeController::class, 'show']);
+    Route::patch('me', [MeController::class, 'update']);
     Route::delete('me', [MeController::class, 'destroy']);
+    Route::put('me/password', [MeController::class, 'password'])->middleware('throttle:auth-general');
 
     // Content (cacheable: ETag / If-None-Match, X-Content-Version)
     Route::get('config', [ContentController::class, 'config']);
@@ -86,5 +89,14 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'role:admin,therapist'])->pre
     Route::middleware('role:admin')->group(function () {
         Route::get('therapists', [Panel\TherapistController::class, 'index']);
         Route::post('therapists', [Panel\TherapistController::class, 'store']);
+
+        // Content shown in the app (live on save).
+        Route::get('programs', [Panel\ProgramController::class, 'index']);
+        Route::post('programs', [Panel\ProgramController::class, 'store']);
+        Route::get('programs/{programId}', [Panel\ProgramController::class, 'show']);
+        Route::patch('programs/{programId}', [Panel\ProgramController::class, 'update']);
+        Route::put('programs/{programId}/content', [Panel\ProgramController::class, 'replaceContent']);
+        Route::get('questionnaire', [Panel\QuestionnaireController::class, 'show']);
+        Route::put('questionnaire', [Panel\QuestionnaireController::class, 'update']);
     });
 });

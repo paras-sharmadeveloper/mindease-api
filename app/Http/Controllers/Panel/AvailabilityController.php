@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Panel;
 use App\Models\AvailabilityException;
 use App\Services\Booking\PanelPresenter;
 use Carbon\CarbonImmutable;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -15,14 +16,22 @@ use Illuminate\Validation\ValidationException;
  * Weekly hours (wall clock in the therapist's timezone) and blocked periods (UTC).
  * Existing bookings are never touched: changing hours only changes which new slots are offered.
  */
+#[Group('Weekly hours & time off', 'When a therapist can be booked.', weight: 5)]
 class AvailabilityController extends PanelController
 {
+    /**
+     * Get weekly hours and time off.
+     */
     public function show(Request $request, string $therapistId, PanelPresenter $presenter): JsonResponse
     {
         return response()->json($presenter->availability($this->therapistFor($request, $therapistId)));
     }
 
-    /** Full replace of the weekly windows: { windows: [{ weekday 0-6 (0 = Sunday), start "09:00", end "17:00" }] }. */
+    /**
+     * Set weekly hours.
+     *
+     * Full replace: `{ windows: [{ weekday 0-6 (0 = Sunday), start "09:00", end "17:00" }] }`.
+     */
     public function update(Request $request, string $therapistId, PanelPresenter $presenter): JsonResponse
     {
         $therapist = $this->therapistFor($request, $therapistId);
@@ -54,7 +63,11 @@ class AvailabilityController extends PanelController
         return response()->json($presenter->availability($therapist));
     }
 
-    /** Block a period (leave, holidays): { startsAt, endsAt, reason? } in ISO 8601. */
+    /**
+     * Add time off.
+     *
+     * Blocks a period (leave, holidays): `{ startsAt, endsAt, reason? }` in ISO 8601.
+     */
     public function storeException(Request $request, string $therapistId, PanelPresenter $presenter): JsonResponse
     {
         $therapist = $this->therapistFor($request, $therapistId);
@@ -73,6 +86,9 @@ class AvailabilityController extends PanelController
         return response()->json($presenter->availability($therapist), 201);
     }
 
+    /**
+     * Remove time off.
+     */
     public function destroyException(Request $request, string $therapistId, int $exceptionId): Response
     {
         $therapist = $this->therapistFor($request, $therapistId);

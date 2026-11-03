@@ -5,12 +5,18 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PhaseCompletion;
 use App\Support\Iso;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+#[Group('Points', 'Points earned by completing phases.', weight: 7)]
 class PointsController extends Controller
 {
-    /** { total, awards: [{ programId, phaseId, points, awardedAt }] } - read-only; points are only created by phase completion. */
+    /**
+     * Get my points.
+     *
+     * `{ total, awards: [{ programId, phaseId, points, awardedAt }] }`. Read-only: points come only from completing phases.
+     */
     public function show(Request $request): JsonResponse
     {
         $awards = $request->user()->phaseCompletions()->orderBy('completed_at')->get();
