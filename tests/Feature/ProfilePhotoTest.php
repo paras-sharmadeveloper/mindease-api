@@ -111,4 +111,27 @@ class ProfilePhotoTest extends ApiTestCase
         $this->deleteJson('/v1/me')->assertNoContent(); // account deletion
         Storage::disk('local')->assertMissing($path);
     }
+
+    public function test_photo_over_8_mb_says_too_large(): void
+    {
+        $this->post('/v1/me', ['photo' => UploadedFile::fake()->create('big.jpg', 9000, 'image/jpeg')], ['Accept' => 'application/json'])
+            ->assertStatus(422)->assertJsonPath('error.field', 'photo')
+            ->assertJsonPath('error.message', 'This photo is too large. Choose one under 8 MB.');
+        $this->assertNull($this->user->fresh()->photo_path);
+    }
+
+    public function test_photo_refused_by_php_upload_limit_says_too_large(): void
+    {
+        $file = new UploadedFile(__FILE__, 'big.jpg', 'image/jpeg', UPLOAD_ERR_INI_SIZE, true);
+        $this->post('/v1/me', ['firstName' => 'Changed', 'photo' => $file], ['Accept' => 'application/json'])
+            ->assertStatus(422)->assertJsonPath('error.field', 'photo')
+            ->assertJsonPath('error.message', 'This photo is too large. Choose one under 8 MB.');
+        $this->assertNotSame('Changed', $this->user->fresh()->first_name); // nothing saved
+    }
+
+    public function test_request_over_php_post_limit_returns_413(): void
+    {
+        $this->call('POST', '/v1/me', [], [], [], ['CONTENT_LENGTH' => 1024 ** 4, 'HTTP_ACCEPT' => 'application/json'])
+            ->assertStatus(413)->assertJsonPath('error.code', 'payload_too_large')->assertJsonPath('error.field', 'photo');
+    }
 }

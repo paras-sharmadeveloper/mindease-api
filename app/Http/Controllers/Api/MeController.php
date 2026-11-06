@@ -12,16 +12,20 @@ use App\Services\TokenService;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\PersonalAccessToken;
 
 #[Group('Account', 'The signed-in user: profile, password and account deletion.', weight: 2)]
 class MeController extends Controller
 {
+    public const PHOTO_TOO_LARGE = 'This photo is too large. Choose one under 8 MB.';
+
     /**
      * Get my account.
      *
@@ -67,6 +71,12 @@ class MeController extends Controller
             $request->merge(['mobile' => self::normaliseMobile($request->input('mobile'))]);
         }
 
+        // PHP itself refused the file (over upload_max_filesize): say it's too large, not "choose a photo".
+        $upload = $request->file('photo');
+        if ($upload instanceof UploadedFile && in_array($upload->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+            throw ValidationException::withMessages(['photo' => self::PHOTO_TOO_LARGE]);
+        }
+
         $data = $request->validate([
             'firstName' => ['sometimes', 'required', 'string', 'max:50'],
             'lastName' => ['sometimes', 'nullable', 'string', 'max:50'],
@@ -83,7 +93,7 @@ class MeController extends Controller
             'email.email' => 'Please enter a valid email address.',
             'photo.file' => 'Choose a photo to upload.',
             'photo.uploaded' => 'Choose a photo to upload.',
-            'photo.max' => 'Choose a photo under 8 MB.',
+            'photo.max' => self::PHOTO_TOO_LARGE,
         ]);
 
         $user = $request->user();

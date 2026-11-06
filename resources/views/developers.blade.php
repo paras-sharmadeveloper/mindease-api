@@ -804,7 +804,7 @@ const GROUPS = [
       ['remindersEnabled', 'body', 'boolean', false, ''], ['photo', 'body', 'file', false, 'JPG, PNG or WebP, up to 8 MB (form-data).'], ['removePhoto', 'body', 'boolean', false, 'true removes the photo.']],
     body: { firstName: 'Asha', lastName: 'Patel', preferredName: 'Ash', mobile: '0412 345 678', remindersEnabled: true },
     response: [200, { ...USER, firstName: 'Asha', lastName: 'Patel', preferredName: 'Ash', mobile: '+61412345678', photoUrl: 'https://api.mindease.me/avatars/Xq9…40 characters….jpg', remindersEnabled: true, pendingEmail: null }],
-    errors: [[422, 'validation_failed', 'For example, mobile isn\'t an Australian mobile.'], [422, 'invalid_photo', 'Not a JPG, PNG or WebP image.'], [409, 'email_taken', 'Another account uses that email.'],
+    errors: [[422, 'validation_failed', 'For example, mobile isn\'t an Australian mobile.'], [422, 'invalid_photo', 'Not a JPG, PNG or WebP image.'], [422, 'validation_failed', 'Photo over 8 MB: "This photo is too large. Choose one under 8 MB."'], [413, 'payload_too_large', 'Request body too large; nothing saved.'], [409, 'email_taken', 'Another account uses that email.'],
       [429, 'rate_limited', 'More than 5 email changes or 20 photo uploads an hour.'], [503, 'photo_unavailable', 'Server can\'t process images.']] },
   { id: 'change-password', method: 'PUT', path: '/me/password', title: 'Change the password', auth: true,
     desc: 'For a signed-in user who knows their current password. This device stays signed in; every other device is signed out.',

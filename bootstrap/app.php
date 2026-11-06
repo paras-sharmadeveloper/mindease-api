@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -77,6 +78,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (MethodNotAllowedHttpException $e, Request $request) use ($isApi) {
             return $isApi($request)
                 ? ApiError::response('method_not_allowed', 'This action isn\'t supported here.', 405)
+                : null;
+        });
+
+        // Body over PHP's post_max_size: PHP has already dropped every field, so say so instead of a generic error.
+        $exceptions->render(function (PostTooLargeException $e, Request $request) use ($isApi) {
+            return $isApi($request)
+                ? ApiError::response('payload_too_large', 'This photo is too large. Choose one under 8 MB.', 413, 'photo')
                 : null;
         });
 
