@@ -18,8 +18,15 @@ class FakePaymentGateway implements PaymentGateway
 
     public bool $failNext = false;
 
-    public function createPaymentIntent(int $amountCents, string $currency, array $metadata, string $idempotencyKey): array
+    public bool $declineNext = false;
+
+    public function createPaymentIntent(int $amountCents, string $currency, array $metadata, string $idempotencyKey, ?string $paymentMethodId = null): array
     {
+        if ($this->declineNext) {
+            $this->declineNext = false;
+            throw new ApiException('payment_declined', 'Your card was declined.', 402, 'paymentMethodId');
+        }
+
         if ($this->failNext) {
             $this->failNext = false;
             throw new ApiException('payment_unavailable', 'We couldn\'t reach the payment service. Please try again.', 502);
@@ -27,12 +34,19 @@ class FakePaymentGateway implements PaymentGateway
 
         $this->intents[$idempotencyKey] ??= [
             'id' => 'pi_'.substr(md5($idempotencyKey), 0, 16),
-            'amount' => $amountCents, 'currency' => $currency, 'metadata' => $metadata,
+            'amount' => $amountCents, 'currency' => $currency, 'metadata' => $metadata, 'paymentMethod' => $paymentMethodId,
         ];
 
         $id = $this->intents[$idempotencyKey]['id'];
 
-        return ['id' => $id, 'clientSecret' => "{$id}_secret_test", 'status' => 'requires_payment_method'];
+        // pm_card_threeDSecure2Required mimics a card that needs 3-D Secure.
+        $status = match (true) {
+            $paymentMethodId === null => 'requires_payment_method',
+            str_contains($paymentMethodId, 'threeDSecure') => 'requires_action',
+            default => 'processing',
+        };
+
+        return ['id' => $id, 'clientSecret' => "{$id}_secret_test", 'status' => $status];
     }
 
     public function cancelPaymentIntent(string $paymentIntentId): void

@@ -40,7 +40,7 @@ class TherapistController extends PanelController
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'string', Password::min(8)],
-        ] + $this->profileRules(admin: true));
+        ] + $this->profileRules(admin: true), self::MESSAGES);
 
         $therapist = DB::transaction(function () use ($data) {
             $user = User::create(['name' => $data['name'], 'email' => strtolower($data['email']), 'password' => $data['password']]);
@@ -77,7 +77,7 @@ class TherapistController extends PanelController
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'email', 'max:255', Rule::unique('users', 'email')->ignore($therapist->user_id)],
             'password' => ['sometimes', 'string', Password::min(8)],
-        ] : []) + $this->profileRules($admin));
+        ] : []) + $this->profileRules($admin), self::MESSAGES);
 
         DB::transaction(function () use ($therapist, $data, $tokens) {
             if (isset($data['password'])) {
@@ -94,12 +94,15 @@ class TherapistController extends PanelController
         return response()->json($presenter->therapist($therapist->refresh()->load('user')));
     }
 
+    private const MESSAGES = ['specialties.*.in' => 'Choose specialties from the list.', 'specialties.*.distinct' => 'Each specialty can be chosen once.'];
+
     private function profileRules(bool $admin): array
     {
         return [
             'bio' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'specialties' => ['sometimes', 'array', 'max:20'],
-            'specialties.*' => ['string', 'max:64'],
+            // Keys from config('mindease.focus_areas') (GET /v1/focus-areas), so the app can match them to the user's focus.
+            'specialties.*' => ['string', 'distinct', Rule::in(array_keys(config('mindease.focus_areas')))],
             'photoUrl' => ['sometimes', 'nullable', 'url:https', 'max:2048'],
             'timezone' => ['sometimes', 'timezone:all'],
         ] + ($admin ? [

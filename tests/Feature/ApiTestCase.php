@@ -21,7 +21,7 @@ abstract class ApiTestCase extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        app(ContentImporter::class)->importDirectory(database_path('content'));
+        app(ContentImporter::class)->importDirectory(base_path('tests/fixtures/content'));
     }
 
     protected function signIn(?User $user = null): User
@@ -42,7 +42,7 @@ abstract class ApiTestCase extends TestCase
     /** Completes every item of a phase (lessons, videos, activity, quiz). Returns the last response. */
     protected function completePhase(string $phaseId)
     {
-        $program = json_decode(file_get_contents(database_path('content/mhfa_program.json')), true);
+        $program = json_decode(file_get_contents(base_path('tests/fixtures/content/mhfa_program.json')), true);
         $phase = collect($program['phases'])->firstWhere('id', $phaseId);
 
         foreach ($phase['lessons'] as $lesson) {

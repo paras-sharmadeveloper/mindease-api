@@ -362,4 +362,63 @@ class BookingTest extends ApiTestCase
         $this->assertSame(0, DB::table('bookings')->where('user_id', $user->id)->count());
         $this->assertSame(0, DB::table('payments')->where('user_id', $user->id)->count());
     }
+
+    public function test_focus_areas_list_and_therapists_ordered_by_focus(): void
+    {
+        $this->signIn();
+        $this->getJson('/v1/focus-areas')->assertOk()->assertJsonFragment(['key' => 'sleep', 'label' => 'Sleep']);
+
+        $sleepy = Therapist::create(['user_id' => User::factory()->create(['name' => 'Dr Amy Zed'])->id, 'specialties' => ['sleep', 'stress'], 'timezone' => 'Australia/Sydney']);
+
+        // Picked on the booking screen.
+        $list = $this->getJson('/v1/therapists?focus=sleep,stress')->assertOk();
+        $list->assertJsonPath('0.id', $sleepy->id)->assertJsonPath('0.matchedFocus', ['sleep', 'stress'])
+            ->assertJsonPath('0.specialties.0', ['key' => 'sleep', 'label' => 'Sleep'])
+            ->assertJsonPath('1.matchedFocus', []);
+        $this->getJson('/v1/therapists?focus=anxiety')->assertJsonPath('0.id', $this->therapist->id);
+
+        // Nothing picked: the questionnaire decides (poor sleep -> sleep).
+        $this->getJson('/v1/therapists')->assertJsonPath('0.name', 'Dr Amy Zed'); // no answers: by name
+        $this->putJson('/v1/me/assessment', ['answers' => ['sleep' => 'poor']])->assertOk();
+        $this->getJson('/v1/therapists')->assertJsonPath('0.id', $sleepy->id)->assertJsonPath('0.matchedFocus', ['sleep']);
+    }
+
+    public function test_booking_saves_focus_and_mobile_from_the_booking_screen(): void
+    {
+        $user = $this->signIn();
+
+        $res = $this->book(extra: ['focus' => ['anxiety', 'sleep'], 'mobile' => '0412 345 678', 'notes' => 'First session'])->assertCreated();
+        $res->assertJsonPath('booking.focus', [['key' => 'anxiety', 'label' => 'Anxiety'], ['key' => 'sleep', 'label' => 'Sleep']])
+            ->assertJsonPath('booking.mobile', '+61412345678')
+            ->assertJsonPath('payment.status', 'requires_payment_method');
+        $this->assertSame('+61412345678', $user->fresh()->mobile); // filled in the empty profile field
+
+        $raw = DB::table('bookings')->where('id', $res->json('booking.id'))->first();
+        $this->assertStringNotContainsString('anxiety', $raw->focus);
+        $this->assertStringNotContainsString('412345678', $raw->contact_mobile);
+
+        $this->book(self::WED_9AM, extra: ['focus' => ['astrology']])->assertStatus(422)->assertJsonPath('error.field', 'focus.0');
+        $this->book(self::WED_9AM, extra: ['mobile' => '12345'])->assertStatus(422)->assertJsonPath('error.field', 'mobile');
+    }
+
+    public function test_booking_with_a_card_from_the_app_charges_it_at_once(): void
+    {
+        $this->signIn();
+
+        $res = $this->book(extra: ['paymentMethodId' => 'pm_card_visa'])->assertCreated()->assertJsonPath('payment.status', 'processing');
+        $this->assertSame('pm_card_visa', collect($this->stripe->intents)->first()['paymentMethod']);
+        $this->assertSame('pending', $res->json('booking.status')); // still only the webhook confirms
+        $this->pay($res->json('booking.id'));
+        $this->getJson('/v1/me/bookings/'.$res->json('booking.id'))->assertJsonPath('status', 'confirmed');
+
+        $this->book(self::WED_9AM, extra: ['paymentMethodId' => 'pm_card_threeDSecure2Required'])->assertCreated()
+            ->assertJsonPath('payment.status', 'requires_action');
+
+        $this->stripe->declineNext = true;
+        $this->book('2026-11-04T22:00:00.000Z', extra: ['paymentMethodId' => 'pm_card_chargeDeclined'])
+            ->assertStatus(402)->assertJsonPath('error.code', 'payment_declined');
+        $this->assertSame(0, Booking::where('starts_at', Carbon::parse('2026-11-04T22:00:00Z'))->whereNotNull('slot_lock')->count()); // slot freed
+
+        $this->book('2026-11-05T22:00:00.000Z', extra: ['paymentMethodId' => 'tok_visa'])->assertStatus(422)->assertJsonPath('error.field', 'paymentMethodId');
+    }
 }

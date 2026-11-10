@@ -1,65 +1,97 @@
 {
-  "version": "0.0.1-sample",
-  "note": "SAMPLE - replace with the app's assets/content/onboarding_questionnaire.json",
+  "id": "onboarding-v1",
+  "version": "0.1.0-draft",
+  "moods": [
+    {
+      "v": "great",
+      "label": "Really good",
+      "level": 0,
+      "color": "#9BB068"
+    },
+    {
+      "v": "good",
+      "label": "Good",
+      "level": 1,
+      "color": "#FFCE5C"
+    },
+    {
+      "v": "okay",
+      "label": "Okay",
+      "level": 2,
+      "color": "#C9B4A5"
+    },
+    {
+      "v": "low",
+      "label": "Low",
+      "level": 3,
+      "color": "#ED7E1C"
+    },
+    {
+      "v": "verylow",
+      "label": "Very low",
+      "level": 4,
+      "color": "#A694F5"
+    }
+  ],
   "questions": [
     {
       "id": "goals",
       "type": "multi",
-      "q": "What would you like help with?",
+      "q": "What would you like MindEase to help with?",
+      "help": "Choose any that apply.",
       "options": [
         {
+          "v": "understand",
+          "label": "Understand my mental health"
+        },
+        {
           "v": "stress",
-          "label": "Managing stress"
+          "label": "Manage stress"
         },
         {
-          "v": "sleep",
-          "label": "Better sleep"
+          "v": "emotions",
+          "label": "Notice my emotions"
         },
         {
-          "v": "mood",
-          "label": "Understanding my mood"
+          "v": "talk",
+          "label": "Talk about how I feel"
+        },
+        {
+          "v": "support",
+          "label": "Support someone I care about"
+        },
+        {
+          "v": "habits",
+          "label": "Build healthier habits"
         }
       ]
     },
     {
       "id": "mood",
       "type": "mood",
-      "q": "How have you been feeling lately?",
-      "options": [
-        {
-          "v": "very_low",
-          "label": "Very low"
-        },
-        {
-          "v": "low",
-          "label": "Low"
-        },
-        {
-          "v": "okay",
-          "label": "Okay"
-        },
-        {
-          "v": "good",
-          "label": "Good"
-        },
-        {
-          "v": "great",
-          "label": "Great"
-        }
-      ]
+      "q": "Over the past two weeks, how have you been feeling overall?",
+      "help": "Go with your first instinct."
     },
     {
       "id": "stress",
       "type": "single",
-      "q": "How stressed do you feel?",
+      "q": "How would you describe your stress lately?",
       "options": [
         {
-          "v": "low",
-          "label": "A little"
+          "v": "calm",
+          "label": "Calm"
         },
         {
-          "v": "medium",
-          "label": "Quite a bit"
+          "v": "manageable",
+          "label": "Manageable"
+        },
+        {
+          "v": "noticeable",
+          "label": "Noticeable"
+        },
+        {
+          "v": "high",
+          "label": "High"
         },
         {
           "v": "overwhelming",
@@ -70,22 +102,32 @@
     {
       "id": "sleep",
       "type": "single",
-      "q": "How are you sleeping?",
+      "q": "How has your sleep been?",
       "options": [
         {
-          "v": "well",
-          "label": "Well"
+          "v": "restful",
+          "label": "Restful"
         },
         {
-          "v": "poorly",
-          "label": "Poorly"
+          "v": "fine",
+          "label": "Mostly fine"
+        },
+        {
+          "v": "patchy",
+          "label": "Patchy"
+        },
+        {
+          "v": "poor",
+          "label": "Poor"
         }
       ]
     },
     {
-      "id": "physical",
+      "id": "body",
       "type": "multi",
-      "q": "Have you noticed any of these?",
+      "q": "Have you noticed stress showing up in your body?",
+      "help": "Choose any that apply.",
+      "exclusive": "none",
       "options": [
         {
           "v": "headaches",
@@ -93,34 +135,55 @@
         },
         {
           "v": "tension",
-          "label": "Tension"
+          "label": "Muscle tension"
+        },
+        {
+          "v": "tired",
+          "label": "Tiredness"
+        },
+        {
+          "v": "appetite",
+          "label": "Appetite changes"
+        },
+        {
+          "v": "heart",
+          "label": "Racing heart"
         },
         {
           "v": "none",
           "label": "None of these"
         }
-      ],
-      "exclusive": "none"
+      ]
     },
     {
-      "id": "talking",
+      "id": "express",
       "type": "single",
-      "q": "How easy is it to talk about how you feel?",
+      "q": "How easy is it for you to talk about how you feel?",
       "options": [
         {
           "v": "easy",
           "label": "Easy"
         },
         {
+          "v": "sometimes",
+          "label": "Sometimes easy"
+        },
+        {
           "v": "hard",
           "label": "Hard"
+        },
+        {
+          "v": "veryhard",
+          "label": "Very hard"
         }
       ]
     },
     {
       "id": "support",
       "type": "multi",
-      "q": "Who can you talk to?",
+      "q": "Who could you reach out to if things got tough?",
+      "help": "Choose any that apply.",
+      "exclusive": "noone",
       "options": [
         {
           "v": "family",
@@ -131,28 +194,46 @@
           "label": "Friends"
         },
         {
-          "v": "no_one",
+          "v": "partner",
+          "label": "Partner"
+        },
+        {
+          "v": "pro",
+          "label": "A health professional"
+        },
+        {
+          "v": "community",
+          "label": "Community or faith group"
+        },
+        {
+          "v": "noone",
           "label": "No one right now"
         }
-      ],
-      "exclusive": "no_one"
+      ]
     },
     {
-      "id": "learning",
+      "id": "style",
       "type": "single",
       "q": "How do you like to learn?",
       "options": [
         {
-          "v": "reading",
-          "label": "Reading"
+          "v": "read",
+          "label": "Short reads",
+          "d": "Lessons first"
         },
         {
-          "v": "videos",
-          "label": "Short videos"
+          "v": "watch",
+          "label": "Short videos",
+          "d": "Videos first"
         },
         {
-          "v": "doing",
-          "label": "Doing activities"
+          "v": "do",
+          "label": "Hands-on activities",
+          "d": "Reflection first"
+        },
+        {
+          "v": "mix",
+          "label": "A mix of everything"
         }
       ]
     },
@@ -166,12 +247,16 @@
           "label": "5 minutes"
         },
         {
+          "v": "10",
+          "label": "10 minutes"
+        },
+        {
           "v": "15",
           "label": "15 minutes"
         },
         {
-          "v": "30",
-          "label": "30 minutes"
+          "v": "20",
+          "label": "20 minutes or more"
         }
       ]
     }

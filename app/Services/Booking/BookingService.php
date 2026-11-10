@@ -26,8 +26,12 @@ class BookingService
         private readonly PaymentGateway $payments,
     ) {}
 
-    /** @return array{booking: Booking, clientSecret: string} */
-    public function create(User $user, Therapist $therapist, CarbonImmutable $startsAt, ?string $notes): array
+    /**
+     * $details: notes, focus (focus-area keys), contactMobile (E.164), paymentMethodId (card collected by the app).
+     *
+     * @return array{booking: Booking, clientSecret: string, paymentStatus: string}
+     */
+    public function create(User $user, Therapist $therapist, CarbonImmutable $startsAt, array $details = []): array
     {
         $config = config('mindease.bookings');
         $released = [];
@@ -35,7 +39,7 @@ class BookingService
         try {
             // Throwing in here rolls back the hold releases too. That's fine: an expired hold
             // already doesn't block the slot, and the user's own replaced hold stays theirs.
-            $booking = DB::transaction(function () use ($user, $therapist, $startsAt, $notes, $config, &$released) {
+            $booking = DB::transaction(function () use ($user, $therapist, $startsAt, $details, $config, &$released) {
                 Therapist::whereKey($therapist->id)->lockForUpdate()->first();
 
                 // Free lapsed holds on this therapist, plus the user's own earlier hold on this
@@ -69,7 +73,9 @@ class BookingService
                     'hold_expires_at' => now()->addMinutes($config['hold_minutes']),
                     'price_cents' => $therapist->priceCents(),
                     'currency' => $config['currency'],
-                    'notes' => $notes,
+                    'notes' => $details['notes'] ?? null,
+                    'focus' => $details['focus'] ?? null,
+                    'contact_mobile' => $details['contactMobile'] ?? null,
                 ]);
             });
         } catch (UniqueConstraintViolationException) {
@@ -86,6 +92,7 @@ class BookingService
                 $booking->currency,
                 ['booking_id' => $booking->id, 'user_id' => $user->id],
                 "booking-{$booking->id}",
+                $details['paymentMethodId'] ?? null,
             );
         } catch (ApiException $e) {
             $booking->update([
@@ -105,7 +112,7 @@ class BookingService
             'status' => $intent['status'],
         ]);
 
-        return ['booking' => $booking->refresh(), 'clientSecret' => $intent['clientSecret']];
+        return ['booking' => $booking->refresh(), 'clientSecret' => $intent['clientSecret'], 'paymentStatus' => $intent['status']];
     }
 
     /**

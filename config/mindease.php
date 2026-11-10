@@ -44,6 +44,23 @@ return [
         'join_opens_minutes_before' => (int) env('MINDEASE_JOIN_OPENS_MINUTES_BEFORE', 10),
     ],
 
+    // Focus areas: the one list behind therapist specialties (set in the panel), the booking screen's
+    // "What would you like to focus on?" (`focus` on POST /me/bookings) and the therapist list ordering.
+    // Keys are stable ids stored on therapists and bookings: add new ones freely, never rename one in use.
+    'focus_areas' => [
+        'stress' => 'Stress',
+        'anxiety' => 'Anxiety',
+        'low_mood' => 'Low mood',
+        'sleep' => 'Sleep',
+        'emotions' => 'Understanding emotions',
+        'relationships' => 'Relationships',
+        'work' => 'Work and burnout',
+        'grief' => 'Grief and loss',
+        'self_esteem' => 'Self-esteem',
+        'supporting_others' => 'Supporting someone else',
+        'wellbeing' => 'Healthy habits and wellbeing',
+    ],
+
     // Developer portal at /developers (guides, reference, "Try it" console). Off in production unless enabled.
     'developer_docs' => (bool) env('MINDEASE_DEVELOPER_DOCS', env('APP_ENV') !== 'production'),
 

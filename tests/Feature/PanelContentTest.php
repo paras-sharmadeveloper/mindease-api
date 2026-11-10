@@ -18,7 +18,7 @@ class PanelContentTest extends ApiTestCase
 
     private function program(): array
     {
-        return json_decode(file_get_contents(database_path('content/mhfa_program.json')), true);
+        return json_decode(file_get_contents(base_path('tests/fixtures/content/mhfa_program.json')), true);
     }
 
     public function test_only_admins_manage_content(): void

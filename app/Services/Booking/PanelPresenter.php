@@ -68,6 +68,9 @@ class PanelPresenter
             'priceCents' => $booking->price_cents,
             'currency' => $booking->currency,
             'notes' => $isTherapist ? $booking->notes : null,
+            // What the client wants to focus on is sensitive like notes: their therapist only.
+            'focus' => $isTherapist ? BookingPresenter::focusAreas($booking->focus ?? []) : [],
+            'clientMobile' => $booking->contact_mobile ?? $booking->user->mobile,
             'payment' => $payment ? [
                 'status' => $payment->status,
                 'amountCents' => $payment->amount_cents,

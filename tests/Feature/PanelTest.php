@@ -258,4 +258,15 @@ class PanelTest extends ApiTestCase
         $this->assertTrue(password_verify('changed-after-login', $admin->refresh()->password));
         $this->assertSame(1, User::where('email', 'admin@mindease.me')->count());
     }
+
+    public function test_specialties_come_from_the_focus_area_list(): void
+    {
+        $this->signIn($this->admin);
+        $id = $this->postJson('/v1/panel/therapists', [
+            'name' => 'Dr Kim', 'email' => 'kim@example.com', 'password' => 'secret-pass-1', 'specialties' => ['anxiety', 'sleep'],
+        ])->assertCreated()->json('id');
+
+        $this->patchJson("/v1/panel/therapists/{$id}", ['specialties' => ['Anxiety stuff']])->assertStatus(422)
+            ->assertJsonPath('error.message', 'Choose specialties from the list.');
+    }
 }

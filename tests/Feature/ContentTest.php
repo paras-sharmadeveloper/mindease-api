@@ -44,4 +44,16 @@ class ContentTest extends ApiTestCase
 
         $this->get('/v1/programs/mhfa', ['If-None-Match' => $etag, 'Accept' => 'application/json'])->assertStatus(304);
     }
+
+    public function test_the_real_app_content_in_database_content_imports_cleanly(): void
+    {
+        $log = app(\App\Services\ContentImporter::class)->importDirectory(database_path('content'), force: true);
+        $this->assertNotEmpty($log);
+
+        $this->signIn();
+        $program = $this->getJson('/v1/programs/mhfa')->assertOk();
+        $this->assertStringNotContainsString('Placeholder', $program->getContent());
+        $program->assertJsonPath('phases.1.activity.prompts.0.responseType', 'chips_and_text');
+        $this->getJson('/v1/questionnaires/onboarding')->assertOk()->assertJsonPath('questions.0.options.0.v', 'understand');
+    }
 }

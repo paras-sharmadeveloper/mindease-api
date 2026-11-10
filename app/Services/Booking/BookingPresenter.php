@@ -11,19 +11,30 @@ class BookingPresenter
 {
     public function __construct(private readonly BookingService $bookings) {}
 
-    public function therapist(Therapist $therapist): array
+    /** @param list<string>|null $focus the user's focus keys: adds `matchedFocus` (the specialties that match) */
+    public function therapist(Therapist $therapist, ?array $focus = null): array
     {
+        $keys = array_values($therapist->specialties ?? []);
+
         return [
             'id' => $therapist->id,
             'name' => $therapist->user->name,
             'bio' => $therapist->bio,
-            'specialties' => $therapist->specialties ?? [],
+            'specialties' => self::focusAreas($keys),
             'photoUrl' => $therapist->photo_url,
             'timezone' => $therapist->timezone,
             'priceCents' => $therapist->priceCents(),
             'currency' => config('mindease.bookings.currency'),
             'sessionMinutes' => config('mindease.bookings.session_minutes'),
-        ];
+        ] + ($focus === null ? [] : ['matchedFocus' => array_values(array_intersect($keys, $focus))]);
+    }
+
+    /** Focus keys -> [{ key, label }] (labels from config('mindease.focus_areas')). */
+    public static function focusAreas(array $keys): array
+    {
+        $labels = config('mindease.focus_areas');
+
+        return array_map(fn (string $k) => ['key' => $k, 'label' => $labels[$k] ?? ucfirst(str_replace('_', ' ', $k))], array_values($keys));
     }
 
     /** Only ever returned to the booking's owner (notes are sensitive). */
@@ -47,6 +58,8 @@ class BookingPresenter
             'priceCents' => $booking->price_cents,
             'currency' => $booking->currency,
             'notes' => $booking->notes,
+            'focus' => self::focusAreas($booking->focus ?? []),
+            'mobile' => $booking->contact_mobile,
             'payment' => $payment ? [
                 'status' => $payment->status,
                 'amountCents' => $payment->amount_cents,

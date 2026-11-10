@@ -8,8 +8,14 @@ namespace App\Services\Payments;
  */
 interface PaymentGateway
 {
-    /** @return array{id: string, clientSecret: string, status: string} */
-    public function createPaymentIntent(int $amountCents, string $currency, array $metadata, string $idempotencyKey): array;
+    /**
+     * With $paymentMethodId (a card the app collected, e.g. `pm_...`), the intent is confirmed straight away:
+     * status `succeeded`, `processing` or `requires_action` (3-D Secure: the app finishes it with the clientSecret).
+     * A declined card throws ApiException('payment_declined', ..., 402).
+     *
+     * @return array{id: string, clientSecret: string, status: string}
+     */
+    public function createPaymentIntent(int $amountCents, string $currency, array $metadata, string $idempotencyKey, ?string $paymentMethodId = null): array;
 
     public function cancelPaymentIntent(string $paymentIntentId): void;
 

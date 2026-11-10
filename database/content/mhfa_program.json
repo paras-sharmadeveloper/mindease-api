@@ -1,758 +1,1071 @@
 {
   "id": "mhfa",
-  "title": "SAMPLE - MHFA Self-Reflection Program",
-  "short": "Placeholder program for API testing",
-  "intro": "Replace this file with the app's real mhfa_program.json.",
+  "title": "Mental Health First Aid Self-Reflection Program",
+  "short": "Understand your mental health, notice the signs, and learn how to support yourself and others.",
+  "intro": "Four short phases you work through in order. Each one has three lessons, three short videos, one reflection activity and a five-question quiz. Go at your own pace.",
   "learn": [
-    "Placeholder"
+    "What mental health is and how it shows up in your body, thoughts and habits",
+    "How to spot early changes in yourself and others",
+    "Why feelings get hidden, and safer ways to express them",
+    "How to check in with someone and connect them to support"
   ],
-  "disclaimer": "This is not an accredited course.",
-  "contentVersion": "0.0.1-sample",
-  "displayOrder": 1,
+  "disclaimer": "This program is educational. It isn't a diagnosis, a treatment, or an accredited Mental Health First Aid course.",
   "phases": [
     {
       "id": "p1",
       "number": 1,
-      "title": "SAMPLE - Noticing how you feel",
-      "description": "Placeholder phase. Replace with the app's assets/content/mhfa_program.json.",
+      "title": "How's Your Head, Really?",
+      "description": "Learn what mental health really means and how it shows up in your body, thoughts, and habits. Start noticing what supports your wellbeing and what makes things harder.",
       "objectives": [
-        "Placeholder objective"
+        "Describe mental health as part of whole-person health",
+        "Place yourself on the mental health continuum",
+        "Name things that support and strain your wellbeing"
       ],
-      "color": "#9BB068",
-      "pointsAwarded": null,
       "lessons": [
         {
           "id": "p1l1",
-          "title": "Sample lesson 1",
+          "title": "Mental Health Isn't Just Mental",
           "minutes": 4,
-          "intro": "Placeholder.",
+          "intro": "Mental health is how we think, feel and act. It affects how we handle stress, connect with people and make choices. And it doesn't stay in your head.",
           "sections": [
             {
-              "h": "Heading",
+              "h": "It shows up in three places",
               "p": [
-                "Placeholder paragraph."
+                "When your mental health shifts, you'll usually notice it somewhere first:"
               ],
               "list": [
-                "Point"
+                "Your body: sleep, energy, appetite, tension, headaches",
+                "Your thoughts: focus, worry, the way you talk to yourself",
+                "Your habits: how you spend time, who you see, how you switch off"
+              ]
+            },
+            {
+              "h": "Everyone has mental health",
+              "p": [
+                "Just like physical health, everyone has mental health. It isn't the same as having a mental illness. It changes over time, with good stretches and harder ones."
               ]
             }
           ],
-          "example": "Placeholder.",
-          "takeaway": "Placeholder."
+          "example": "During a busy month at work, Sam sleeps badly, skips the gym and snaps at his housemate. None of that makes him a bad person. It's his mental health showing up in his body and habits.",
+          "takeaway": "Mental health is part of your overall health. Noticing it in your body and habits is the first skill.",
+          "displayOrder": 1
         },
         {
           "id": "p1l2",
-          "title": "Sample lesson 2",
-          "minutes": 4,
-          "intro": "Placeholder.",
+          "title": "Okay vs Not Okay — What's the Line?",
+          "minutes": 5,
+          "intro": "There isn't a single line between okay and not okay. It's more useful to think of a continuum that we all move along.",
           "sections": [
             {
-              "h": "Heading",
+              "h": "The mental health continuum",
               "p": [
-                "Placeholder paragraph."
+                "People often describe four broad zones. Moving between them is normal."
               ],
               "list": [
-                "Point"
+                "Thriving: feeling like yourself, coping well",
+                "Coping: some stress, but managing",
+                "Struggling: things feel harder and it's starting to affect daily life",
+                "Unwell: distress is high and daily life is significantly affected"
+              ]
+            },
+            {
+              "h": "Signs worth paying attention to",
+              "p": [
+                "A bad day on its own isn't a warning sign. Context matters. Pay closer attention when:"
+              ],
+              "list": [
+                "Changes last for more than a couple of weeks",
+                "They affect work, study, relationships or sleep",
+                "You or others feel you're not yourself"
+              ]
+            },
+            {
+              "h": "When to get support",
+              "p": [
+                "If distress is persistent, getting worse, or getting in the way of daily life, talk to a GP or mental health professional. You don't need to wait until things are severe."
               ]
             }
           ],
-          "example": "Placeholder.",
-          "takeaway": "Placeholder."
+          "example": "Priya feels nervous before a big exam. That's a normal reaction. If she'd felt flat and unable to concentrate for weeks, that would be worth checking in about.",
+          "takeaway": "Look for changes that last, and that affect daily life. Getting support early is a sensible step, not an overreaction.",
+          "displayOrder": 2
         },
         {
           "id": "p1l3",
-          "title": "Sample lesson 3",
+          "title": "What Shapes the Storm?",
           "minutes": 4,
-          "intro": "Placeholder.",
+          "intro": "Many things influence mental health. Some make things harder. Others help protect us. Knowing your own mix helps you look after yourself.",
           "sections": [
             {
-              "h": "Heading",
-              "p": [
-                "Placeholder paragraph."
-              ],
+              "h": "Things that can make it harder",
               "list": [
-                "Point"
+                "Ongoing stress at work, study or home",
+                "Big changes, like a move, loss or breakup",
+                "Loneliness or feeling disconnected",
+                "Poor sleep or physical illness",
+                "Difficult past experiences"
+              ]
+            },
+            {
+              "h": "Things that can help protect",
+              "list": [
+                "Supportive relationships",
+                "Regular sleep and movement",
+                "Activities that feel meaningful",
+                "Skills for handling stress",
+                "Knowing where to get help"
+              ]
+            },
+            {
+              "h": "No guarantees either way",
+              "p": [
+                "These factors shift the odds. They don't decide outcomes. Someone with lots of support can still struggle, and that's not a personal failure."
               ]
             }
           ],
-          "example": "Placeholder.",
-          "takeaway": "Placeholder."
+          "example": "After moving cities, Leah has fewer friends nearby and works long hours. Joining a weekend walking group gives her connection and movement, two protective factors at once.",
+          "takeaway": "Notice what strains your wellbeing and what supports it. Small protective habits add up.",
+          "displayOrder": 3
         }
       ],
       "videos": [
         {
           "id": "p1v1",
-          "title": "Sample video 1",
-          "description": "Placeholder.",
-          "duration": 70,
+          "title": "Let's Redefine Mental Health",
+          "description": "Why mental health is something everyone has, not just a label for illness.",
+          "duration": 72,
           "mediaUrl": null,
-          "thumbnailUrl": null
+          "thumbnailUrl": null,
+          "completionRule": {
+            "type": "percent_played",
+            "useConfig": true
+          }
         },
         {
           "id": "p1v2",
-          "title": "Sample video 2",
-          "description": "Placeholder.",
-          "duration": 80,
+          "title": "You're Not the Only One",
+          "description": "Struggling is common. A short look at why that matters.",
+          "duration": 65,
           "mediaUrl": null,
-          "thumbnailUrl": null
+          "thumbnailUrl": null,
+          "completionRule": {
+            "type": "percent_played",
+            "useConfig": true
+          }
         },
         {
           "id": "p1v3",
-          "title": "Sample video 3",
-          "description": "Placeholder.",
-          "duration": 90,
+          "title": "Inner Shields: What Protects You?",
+          "description": "The everyday things that help protect your wellbeing.",
+          "duration": 84,
           "mediaUrl": null,
-          "thumbnailUrl": null
+          "thumbnailUrl": null,
+          "completionRule": {
+            "type": "percent_played",
+            "useConfig": true
+          }
         }
       ],
       "activity": {
         "id": "p1a",
-        "title": "Sample activity",
-        "purpose": "Placeholder.",
-        "instructions": "Placeholder.",
+        "title": "What Does Good Mental Health Feel Like to You?",
+        "purpose": "Build a picture of what feeling like yourself looks like, so you can notice when things change.",
+        "instructions": "Answer as much or as little as you like. You can skip any question and come back later.",
         "prompts": [
           {
             "id": "q1",
-            "q": "Placeholder question 1?",
-            "chips": [
-              "calm",
-              "tired"
-            ],
-            "optional": true
+            "q": "When you're feeling at your best, what do you notice in your body, thoughts and energy?",
+            "optional": true,
+            "responseType": "text"
           },
           {
             "id": "q2",
-            "q": "Placeholder question 2?",
-            "chips": [],
-            "optional": true
+            "q": "What everyday things help you feel like yourself?",
+            "optional": true,
+            "responseType": "text"
+          },
+          {
+            "id": "q3",
+            "q": "What tends to make things harder for you?",
+            "optional": true,
+            "responseType": "text"
+          },
+          {
+            "id": "q4",
+            "q": "What's one small thing you could do this week to look after your wellbeing?",
+            "optional": true,
+            "responseType": "text"
           }
         ]
       },
       "quiz": {
         "id": "p1q",
-        "passThreshold": null,
         "questions": [
           {
-            "id": "p1q-1",
             "type": "mc",
-            "q": "Sample question 1",
+            "q": "Which statement best describes mental health?",
             "options": [
-              "A",
-              "B",
-              "C",
-              "D"
+              "It's only about mental illness",
+              "How we think, feel and act, and it affects our body and habits too",
+              "Something only some people have",
+              "It's fixed and doesn't change"
             ],
             "answer": 1,
-            "explain": "Placeholder."
+            "explain": "Everyone has mental health. It covers thoughts, feelings and behaviour, and it shows up in the body and in habits.",
+            "id": "p1q-1"
           },
           {
-            "id": "p1q-2",
             "type": "tf",
-            "q": "Sample question 2",
+            "q": "A person's mental health can move along a continuum, from thriving to struggling, over time.",
             "options": [
               "True",
               "False"
             ],
             "answer": 0,
-            "explain": "Placeholder."
+            "explain": "Moving along the continuum is normal. Where someone sits can change with circumstances.",
+            "id": "p1q-2"
           },
           {
-            "id": "p1q-3",
             "type": "mc",
-            "q": "Sample question 3",
+            "q": "Which is most worth paying attention to?",
             "options": [
-              "A",
-              "B",
-              "C",
-              "D"
+              "One stressful afternoon",
+              "Feeling unlike yourself for several weeks, and it's affecting daily life",
+              "Feeling nervous before a presentation",
+              "Being tired after a long trip"
             ],
             "answer": 1,
-            "explain": "Placeholder."
+            "explain": "Changes that last and affect daily life matter more than one-off reactions to normal events.",
+            "id": "p1q-3"
           },
           {
-            "id": "p1q-4",
+            "type": "mc",
+            "q": "Which of these is a protective factor?",
+            "options": [
+              "Ongoing isolation",
+              "Supportive relationships",
+              "Poor sleep",
+              "A constantly high workload"
+            ],
+            "answer": 1,
+            "explain": "Supportive relationships help protect wellbeing. The others tend to make things harder.",
+            "id": "p1q-4"
+          },
+          {
             "type": "tf",
-            "q": "Sample question 4",
+            "q": "If someone has plenty of protective factors, they can't experience mental health difficulties.",
             "options": [
               "True",
               "False"
             ],
-            "answer": 0,
-            "explain": "Placeholder."
-          },
-          {
-            "id": "p1q-5",
-            "type": "mc",
-            "q": "Sample question 5",
-            "options": [
-              "A",
-              "B",
-              "C",
-              "D"
-            ],
             "answer": 1,
-            "explain": "Placeholder."
+            "explain": "Protective factors shift the odds but don't guarantee anything. Anyone can struggle.",
+            "id": "p1q-5"
           }
-        ]
+        ],
+        "title": "Phase 1 quiz",
+        "passThreshold": null
+      },
+      "color": "#9BB068",
+      "pointsAwarded": null,
+      "unlockRequirements": {
+        "previousPhaseCompleted": false
       }
     },
     {
       "id": "p2",
       "number": 2,
-      "title": "SAMPLE - Understanding stress",
-      "description": "Placeholder phase. Replace with the app's assets/content/mhfa_program.json.",
+      "title": "Check Yourself, Kindly",
+      "description": "Learn to spot changes in your mood, energy, behaviour, and physical wellbeing. Build awareness of stress signals and recognise when you may need additional support.",
       "objectives": [
-        "Placeholder objective"
+        "Recognise physical signals of stress",
+        "Notice quieter changes in mood and behaviour",
+        "Choose a healthy response instead of coping alone"
       ],
-      "color": "#ED7E1C",
-      "pointsAwarded": null,
       "lessons": [
         {
           "id": "p2l1",
-          "title": "Sample lesson 1",
+          "title": "Your Body Is a Messenger",
           "minutes": 4,
-          "intro": "Placeholder.",
+          "intro": "Stress often reaches the body before we've named it. Learning your body's signals gives you an early heads-up.",
           "sections": [
             {
-              "h": "Heading",
-              "p": [
-                "Placeholder paragraph."
-              ],
+              "h": "Common physical signals",
               "list": [
-                "Point"
+                "Tight shoulders, neck or jaw",
+                "Headaches or an upset stomach",
+                "A racing heart or shallow breathing",
+                "Feeling tired even after rest",
+                "Changes in sleep or appetite"
+              ]
+            },
+            {
+              "h": "Check with a GP too",
+              "p": [
+                "These signs can also have physical causes. If they keep happening, see a GP. It's not either mind or body."
+              ]
+            },
+            {
+              "h": "A 30-second body check",
+              "p": [
+                "Pause. Notice your jaw, shoulders and breathing. Ask yourself: what is my body telling me right now?"
               ]
             }
           ],
-          "example": "Placeholder.",
-          "takeaway": "Placeholder."
+          "example": "Every Sunday night, Jordan gets a tight chest and can't sleep. Noticing the pattern helps him link it to Monday meetings and plan for them.",
+          "takeaway": "Your body often signals stress first. Notice the pattern, and get physical symptoms checked if they persist.",
+          "displayOrder": 1
         },
         {
           "id": "p2l2",
-          "title": "Sample lesson 2",
+          "title": "Not All Red Flags Are Loud",
           "minutes": 4,
-          "intro": "Placeholder.",
+          "intro": "Some changes are obvious. Many are quiet and easy to explain away.",
           "sections": [
             {
-              "h": "Heading",
-              "p": [
-                "Placeholder paragraph."
-              ],
+              "h": "Quiet changes to notice",
               "list": [
-                "Point"
+                "Pulling back from people or things you enjoy",
+                "Getting irritated more easily",
+                "Putting things off more than usual",
+                "Using screens, food or alcohol to switch off",
+                "Feeling flat rather than sad"
+              ]
+            },
+            {
+              "h": "Look for patterns, not moments",
+              "p": [
+                "One quiet weekend means nothing. A shift from your usual self that sticks around is worth noticing."
               ]
             }
           ],
-          "example": "Placeholder.",
-          "takeaway": "Placeholder."
+          "example": "Mia used to message friends daily. Over a month she's stopped replying and spends evenings scrolling. Nothing dramatic happened, but the change is real.",
+          "takeaway": "Compare yourself to your usual self. Quiet changes that last deserve attention.",
+          "displayOrder": 2
         },
         {
           "id": "p2l3",
-          "title": "Sample lesson 3",
+          "title": "The Cost of Coping Alone",
           "minutes": 4,
-          "intro": "Placeholder.",
+          "intro": "Many of us try to handle things on our own. It can feel easier, but it often makes things harder over time.",
           "sections": [
             {
-              "h": "Heading",
-              "p": [
-                "Placeholder paragraph."
-              ],
+              "h": "Why we cope alone",
               "list": [
-                "Point"
+                "Not wanting to be a burden",
+                "Thinking others have it worse",
+                "Not knowing what to say",
+                "Worrying about being judged"
+              ]
+            },
+            {
+              "h": "What it can cost",
+              "p": [
+                "Problems can grow quietly, and isolation can make everything feel heavier."
+              ]
+            },
+            {
+              "h": "Healthier responses",
+              "list": [
+                "Name what's going on, even just to yourself",
+                "Tell someone you trust",
+                "Make one small change, like a walk or earlier night",
+                "See a GP or mental health professional if things persist or get worse"
               ]
             }
           ],
-          "example": "Placeholder.",
-          "takeaway": "Placeholder."
+          "example": "After weeks of feeling exhausted, Ali tells his sister. She helps him book a GP appointment he'd been putting off.",
+          "takeaway": "You don't have to handle everything alone. Reaching out early is a strength.",
+          "displayOrder": 3
         }
       ],
       "videos": [
         {
           "id": "p2v1",
-          "title": "Sample video 1",
-          "description": "Placeholder.",
+          "title": "Your Body Sends the First Signal",
+          "description": "How stress shows up physically, and why it's worth noticing.",
           "duration": 70,
           "mediaUrl": null,
-          "thumbnailUrl": null
+          "thumbnailUrl": null,
+          "completionRule": {
+            "type": "percent_played",
+            "useConfig": true
+          }
         },
         {
           "id": "p2v2",
-          "title": "Sample video 2",
-          "description": "Placeholder.",
-          "duration": 80,
+          "title": "Mental Health Doesn't Always Scream",
+          "description": "The quiet signs that are easy to miss.",
+          "duration": 78,
           "mediaUrl": null,
-          "thumbnailUrl": null
+          "thumbnailUrl": null,
+          "completionRule": {
+            "type": "percent_played",
+            "useConfig": true
+          }
         },
         {
           "id": "p2v3",
-          "title": "Sample video 3",
-          "description": "Placeholder.",
-          "duration": 90,
+          "title": "The Myth of \"I'll Handle It Alone\"",
+          "description": "Why going it alone often makes things harder.",
+          "duration": 88,
           "mediaUrl": null,
-          "thumbnailUrl": null
+          "thumbnailUrl": null,
+          "completionRule": {
+            "type": "percent_played",
+            "useConfig": true
+          }
         }
       ],
       "activity": {
         "id": "p2a",
-        "title": "Sample activity",
-        "purpose": "Placeholder.",
-        "instructions": "Placeholder.",
+        "title": "When My Mind Speaks Through My Body",
+        "purpose": "Learn your personal early signals so you can respond sooner.",
+        "instructions": "Think about a recent stressful time. Keep it general if you prefer. You don't need to describe the situation.",
         "prompts": [
           {
             "id": "q1",
-            "q": "Placeholder question 1?",
+            "q": "Where did you feel it in your body?",
             "chips": [
-              "calm",
-              "tired"
+              "Head",
+              "Jaw",
+              "Neck and shoulders",
+              "Chest",
+              "Stomach",
+              "Hands",
+              "Whole body tiredness"
             ],
-            "optional": true
+            "optional": true,
+            "responseType": "chips_and_text"
           },
           {
             "id": "q2",
-            "q": "Placeholder question 2?",
-            "chips": [],
-            "optional": true
+            "q": "What other changes did you notice, in sleep, appetite, energy or habits?",
+            "optional": true,
+            "responseType": "text"
+          },
+          {
+            "id": "q3",
+            "q": "What's one early signal you'd like to notice sooner?",
+            "optional": true,
+            "responseType": "text"
+          },
+          {
+            "id": "q4",
+            "q": "What helps your body settle?",
+            "optional": true,
+            "responseType": "text"
           }
         ]
       },
       "quiz": {
         "id": "p2q",
-        "passThreshold": null,
         "questions": [
           {
-            "id": "p2q-1",
             "type": "mc",
-            "q": "Sample question 1",
+            "q": "Which can be a physical sign of stress?",
             "options": [
-              "A",
-              "B",
-              "C",
-              "D"
+              "Tight shoulders or jaw",
+              "Improved focus",
+              "Feeling well rested",
+              "A steady appetite"
             ],
-            "answer": 1,
-            "explain": "Placeholder."
+            "answer": 0,
+            "explain": "Muscle tension in the shoulders and jaw is a common physical stress signal.",
+            "id": "p2q-1"
           },
           {
-            "id": "p2q-2",
             "type": "tf",
-            "q": "Sample question 2",
+            "q": "Physical symptoms like headaches always have a mental health cause.",
             "options": [
               "True",
               "False"
             ],
-            "answer": 0,
-            "explain": "Placeholder."
-          },
-          {
-            "id": "p2q-3",
-            "type": "mc",
-            "q": "Sample question 3",
-            "options": [
-              "A",
-              "B",
-              "C",
-              "D"
-            ],
             "answer": 1,
-            "explain": "Placeholder."
+            "explain": "They can have physical causes too. If they persist, check with a GP.",
+            "id": "p2q-2"
           },
           {
-            "id": "p2q-4",
-            "type": "tf",
-            "q": "Sample question 4",
+            "type": "mc",
+            "q": "Which quiet change might suggest someone is struggling?",
             "options": [
-              "True",
-              "False"
+              "Pulling back from things they used to enjoy",
+              "Taking a planned holiday",
+              "Starting a new hobby",
+              "Laughing at a joke"
             ],
             "answer": 0,
-            "explain": "Placeholder."
+            "explain": "Withdrawing from things someone usually enjoys is a common quiet change.",
+            "id": "p2q-3"
           },
           {
-            "id": "p2q-5",
             "type": "mc",
-            "q": "Sample question 5",
+            "q": "What's most helpful when looking at warning signs?",
             "options": [
-              "A",
-              "B",
-              "C",
-              "D"
+              "Focus on one moment",
+              "Look for changes from usual and patterns over time",
+              "Ignore anything physical",
+              "Wait until things are severe"
             ],
             "answer": 1,
-            "explain": "Placeholder."
+            "explain": "Patterns and changes from someone's usual self tell you more than any single moment.",
+            "id": "p2q-4"
+          },
+          {
+            "type": "mc",
+            "q": "You've felt flat and exhausted for three weeks and it's affecting work. What's a healthy next step?",
+            "options": [
+              "Keep it to yourself",
+              "Talk to someone you trust and consider seeing a GP",
+              "Push harder at work",
+              "Wait for it to pass on its own"
+            ],
+            "answer": 1,
+            "explain": "When changes last and affect daily life, talking to someone and seeing a GP are sensible steps.",
+            "id": "p2q-5"
           }
-        ]
+        ],
+        "title": "Phase 2 quiz",
+        "passThreshold": null
+      },
+      "color": "#ED7E1C",
+      "pointsAwarded": null,
+      "unlockRequirements": {
+        "previousPhaseCompleted": true
       }
     },
     {
       "id": "p3",
       "number": 3,
-      "title": "SAMPLE - Reaching out",
-      "description": "Placeholder phase. Replace with the app's assets/content/mhfa_program.json.",
+      "title": "Safe to Feel, Safe to Speak",
+      "description": "Understand why people hide their emotions and learn how to recognise, explore, and express feelings more safely.",
       "objectives": [
-        "Placeholder objective"
+        "Understand why feelings get hidden",
+        "Recognise emotional masking in yourself",
+        "Practise naming and sharing feelings safely"
       ],
-      "color": "#A694F5",
-      "pointsAwarded": null,
       "lessons": [
         {
           "id": "p3l1",
-          "title": "Sample lesson 1",
+          "title": "Why It's Hard to Talk About It",
           "minutes": 4,
-          "intro": "Placeholder.",
+          "intro": "If talking about feelings feels hard, you're in good company. There are real reasons it's difficult.",
           "sections": [
             {
-              "h": "Heading",
-              "p": [
-                "Placeholder paragraph."
-              ],
+              "h": "Common reasons",
               "list": [
-                "Point"
+                "Fear of being judged or seen as weak",
+                "Not having the words for what you feel",
+                "Past experiences of being brushed off",
+                "Family or cultural norms about privacy",
+                "Not wanting to worry people"
+              ]
+            },
+            {
+              "h": "These reasons make sense",
+              "p": [
+                "They're often ways of protecting yourself. Understanding them is the first step to choosing when they still serve you."
               ]
             }
           ],
-          "example": "Placeholder.",
-          "takeaway": "Placeholder."
+          "example": "Growing up, Dev learned that his family 'didn't talk about that stuff'. As an adult, he finds it easier to start with a friend outside the family.",
+          "takeaway": "Finding it hard to talk is common and understandable. You can start small.",
+          "displayOrder": 1
         },
         {
           "id": "p3l2",
-          "title": "Sample lesson 2",
+          "title": "The Mask We Wear",
           "minutes": 4,
-          "intro": "Placeholder.",
+          "intro": "Emotional masking means appearing fine on the outside while feeling something different inside.",
           "sections": [
             {
-              "h": "Heading",
-              "p": [
-                "Placeholder paragraph."
-              ],
+              "h": "Why we mask",
               "list": [
-                "Point"
+                "To keep things running at work or home",
+                "To protect others from worry",
+                "To avoid questions we're not ready for"
+              ]
+            },
+            {
+              "h": "The cost",
+              "p": [
+                "Masking for a long time can be exhausting. It also means others can't offer support, because they don't know you need it."
+              ]
+            },
+            {
+              "h": "Masks aren't wrong",
+              "p": [
+                "Sometimes a mask helps you get through a moment. It's worth noticing when it has become the default everywhere."
               ]
             }
           ],
-          "example": "Placeholder.",
-          "takeaway": "Placeholder."
+          "example": "Rosa is the 'funny one' in her team. Lately the jokes feel like hard work, and she's tired by lunchtime.",
+          "takeaway": "Notice where you wear a mask and what it costs you. Choose one safe place to take it off.",
+          "displayOrder": 2
         },
         {
           "id": "p3l3",
-          "title": "Sample lesson 3",
-          "minutes": 4,
-          "intro": "Placeholder.",
+          "title": "You Deserve to Speak",
+          "minutes": 5,
+          "intro": "Expressing feelings safely is a skill you can build, a little at a time.",
           "sections": [
             {
-              "h": "Heading",
+              "h": "Grow your feelings vocabulary",
               "p": [
-                "Placeholder paragraph."
-              ],
+                "'Fine' and 'stressed' cover a lot. Try being more specific: tired, flat, on edge, lonely, overwhelmed, hopeful, relieved."
+              ]
+            },
+            {
+              "h": "Be kind to yourself",
+              "p": [
+                "Self-compassion means speaking to yourself the way you'd speak to a good friend. It isn't letting yourself off the hook. It makes change easier."
+              ]
+            },
+            {
+              "h": "Choose who, when and how much",
               "list": [
-                "Point"
+                "Pick someone who has been safe before",
+                "Choose a calm time",
+                "You decide how much to share",
+                "A simple start: \"I've been finding things hard lately.\""
               ]
             }
           ],
-          "example": "Placeholder.",
-          "takeaway": "Placeholder."
+          "example": "Instead of 'I'm fine', Tom tells his partner, 'I'm feeling flat and I'm not sure why.' It opens a conversation without pressure to explain everything.",
+          "takeaway": "Asking for help isn't a burden. Naming a feeling is a good first step.",
+          "displayOrder": 3
         }
       ],
       "videos": [
         {
           "id": "p3v1",
-          "title": "Sample video 1",
-          "description": "Placeholder.",
-          "duration": 70,
+          "title": "Why We Don't Speak Up",
+          "description": "The reasons we stay quiet, and why they make sense.",
+          "duration": 74,
           "mediaUrl": null,
-          "thumbnailUrl": null
+          "thumbnailUrl": null,
+          "completionRule": {
+            "type": "percent_played",
+            "useConfig": true
+          }
         },
         {
           "id": "p3v2",
-          "title": "Sample video 2",
-          "description": "Placeholder.",
-          "duration": 80,
+          "title": "The Masks We Wear",
+          "description": "What emotional masking looks like day to day.",
+          "duration": 69,
           "mediaUrl": null,
-          "thumbnailUrl": null
+          "thumbnailUrl": null,
+          "completionRule": {
+            "type": "percent_played",
+            "useConfig": true
+          }
         },
         {
           "id": "p3v3",
-          "title": "Sample video 3",
-          "description": "Placeholder.",
-          "duration": 90,
+          "title": "Asking for Help Isn't a Burden",
+          "description": "Reframing what it means to reach out.",
+          "duration": 81,
           "mediaUrl": null,
-          "thumbnailUrl": null
+          "thumbnailUrl": null,
+          "completionRule": {
+            "type": "percent_played",
+            "useConfig": true
+          }
         }
       ],
       "activity": {
         "id": "p3a",
-        "title": "Sample activity",
-        "purpose": "Placeholder.",
-        "instructions": "Placeholder.",
+        "title": "What Are You Really Feeling?",
+        "purpose": "Practise naming feelings more precisely and notice what you tend to hide.",
+        "instructions": "There are no right answers. Share only what feels comfortable.",
         "prompts": [
           {
             "id": "q1",
-            "q": "Placeholder question 1?",
+            "q": "Which words describe how you've felt this week?",
             "chips": [
-              "calm",
-              "tired"
+              "Content",
+              "Calm",
+              "Hopeful",
+              "Grateful",
+              "Tired",
+              "Flat",
+              "On edge",
+              "Frustrated",
+              "Sad",
+              "Lonely",
+              "Overwhelmed"
             ],
-            "optional": true
+            "optional": true,
+            "responseType": "chips_and_text"
           },
           {
             "id": "q2",
-            "q": "Placeholder question 2?",
-            "chips": [],
-            "optional": true
+            "q": "Is there a feeling you tend to hide? What makes it hard to show?",
+            "optional": true,
+            "responseType": "text"
+          },
+          {
+            "id": "q3",
+            "q": "Who is someone you feel safe being honest with? (No names needed.)",
+            "optional": true,
+            "responseType": "text"
+          },
+          {
+            "id": "q4",
+            "q": "Write one kind sentence to yourself about what you're feeling.",
+            "optional": true,
+            "responseType": "text"
           }
         ]
       },
       "quiz": {
         "id": "p3q",
-        "passThreshold": null,
         "questions": [
           {
-            "id": "p3q-1",
             "type": "mc",
-            "q": "Sample question 1",
+            "q": "What is emotional masking?",
             "options": [
-              "A",
-              "B",
-              "C",
-              "D"
+              "Hiding how you really feel behind an 'I'm fine'",
+              "Wearing a face mask when unwell",
+              "Always saying exactly what you feel",
+              "A type of therapy"
             ],
-            "answer": 1,
-            "explain": "Placeholder."
+            "answer": 0,
+            "explain": "Masking means appearing fine on the outside while feeling something different inside.",
+            "id": "p3q-1"
           },
           {
-            "id": "p3q-2",
             "type": "tf",
-            "q": "Sample question 2",
+            "q": "Fear of being judged is a common reason people don't talk about how they feel.",
             "options": [
               "True",
               "False"
             ],
             "answer": 0,
-            "explain": "Placeholder."
+            "explain": "Fear of judgement is one of the most common barriers to speaking up.",
+            "id": "p3q-2"
           },
           {
-            "id": "p3q-3",
             "type": "mc",
-            "q": "Sample question 3",
+            "q": "Which builds emotional awareness?",
             "options": [
-              "A",
-              "B",
-              "C",
-              "D"
+              "Naming specific feelings",
+              "Saying 'fine' to everything",
+              "Avoiding thinking about feelings",
+              "Staying busy all the time"
             ],
-            "answer": 1,
-            "explain": "Placeholder."
+            "answer": 0,
+            "explain": "Naming specific feelings helps you understand them and talk about them.",
+            "id": "p3q-3"
           },
           {
-            "id": "p3q-4",
+            "type": "mc",
+            "q": "Self-compassion means:",
+            "options": [
+              "Speaking to yourself with the kindness you'd show a friend",
+              "Ignoring problems",
+              "Never making mistakes",
+              "Always putting others first"
+            ],
+            "answer": 0,
+            "explain": "Self-compassion is treating yourself with the same kindness you'd offer someone you care about.",
+            "id": "p3q-4"
+          },
+          {
             "type": "tf",
-            "q": "Sample question 4",
+            "q": "Asking for help means you're a burden.",
             "options": [
               "True",
               "False"
             ],
-            "answer": 0,
-            "explain": "Placeholder."
-          },
-          {
-            "id": "p3q-5",
-            "type": "mc",
-            "q": "Sample question 5",
-            "options": [
-              "A",
-              "B",
-              "C",
-              "D"
-            ],
             "answer": 1,
-            "explain": "Placeholder."
+            "explain": "Asking for help is a normal, healthy step. Most people want to help the people they care about.",
+            "id": "p3q-5"
           }
-        ]
+        ],
+        "title": "Phase 3 quiz",
+        "passThreshold": null
+      },
+      "color": "#A694F5",
+      "pointsAwarded": null,
+      "unlockRequirements": {
+        "previousPhaseCompleted": true
       }
     },
     {
       "id": "p4",
       "number": 4,
-      "title": "SAMPLE - Supporting someone else",
-      "description": "Placeholder phase. Replace with the app's assets/content/mhfa_program.json.",
+      "title": "Mental Health First Aid",
+      "description": "Learn to recognise when someone may be struggling, check in with care, maintain appropriate boundaries, and help connect people to suitable support.",
       "objectives": [
-        "Placeholder objective"
+        "Notice when someone may be struggling",
+        "Start a supportive conversation",
+        "Know your role and your limits",
+        "Know where to direct people for help"
       ],
-      "color": "#D64938",
-      "pointsAwarded": null,
       "lessons": [
         {
           "id": "p4l1",
-          "title": "Sample lesson 1",
-          "minutes": 4,
-          "intro": "Placeholder.",
+          "title": "Signs That Go Unspoken",
+          "minutes": 5,
+          "intro": "People rarely announce that they're struggling. Often the signs are changes you notice over time.",
           "sections": [
             {
-              "h": "Heading",
-              "p": [
-                "Placeholder paragraph."
-              ],
+              "h": "Changes you might notice",
               "list": [
-                "Point"
+                "Withdrawing from friends, family or activities",
+                "Changes in mood, like irritability or seeming flat",
+                "Changes in sleep, appetite or appearance",
+                "Trouble keeping up at work or study",
+                "Saying they feel hopeless, trapped or like a burden"
+              ]
+            },
+            {
+              "h": "Notice, don't diagnose",
+              "p": [
+                "No single sign proves anything. Your job isn't to work out what's wrong. It's to notice a change and check in."
+              ]
+            },
+            {
+              "h": "If someone is in immediate danger",
+              "p": [
+                "If someone talks about ending their life or you think they're in immediate danger, call 000. Stay with them if it's safe to do so."
               ]
             }
           ],
-          "example": "Placeholder.",
-          "takeaway": "Placeholder."
+          "example": "Kim's colleague has been missing deadlines, eating lunch alone and once said 'what's the point'. Kim doesn't know what's going on, but decides to check in.",
+          "takeaway": "Notice changes, consider context, and check in. You don't need to have answers.",
+          "displayOrder": 1
         },
         {
           "id": "p4l2",
-          "title": "Sample lesson 2",
-          "minutes": 4,
-          "intro": "Placeholder.",
+          "title": "How to Ask Without Making It Weird",
+          "minutes": 5,
+          "intro": "Checking in doesn't need a script. A caring, simple question goes a long way.",
           "sections": [
             {
-              "h": "Heading",
-              "p": [
-                "Placeholder paragraph."
-              ],
+              "h": "Before you start",
               "list": [
-                "Point"
+                "Pick a private, unhurried time",
+                "Put your phone away",
+                "Be ready to listen more than talk"
+              ]
+            },
+            {
+              "h": "Opening lines that work",
+              "list": [
+                "\"I've noticed you seem quieter lately. How are you going?\"",
+                "\"You haven't seemed yourself. Want to grab a walk?\"",
+                "\"I'm here if you ever want to talk.\""
+              ]
+            },
+            {
+              "h": "While you listen",
+              "list": [
+                "Don't rush to fix or give advice",
+                "Reflect back what you hear",
+                "It's okay if they don't want to talk. Leave the door open and follow up later",
+                "If you're worried about their safety, it's okay to ask them directly"
               ]
             }
           ],
-          "example": "Placeholder.",
-          "takeaway": "Placeholder."
+          "example": "Instead of 'What's wrong with you?', Ben says, 'You've seemed stressed lately. I'm around if you want to talk.' His friend opens up a few days later.",
+          "takeaway": "Start with what you've noticed, listen without judging, and keep the door open.",
+          "displayOrder": 2
         },
         {
           "id": "p4l3",
-          "title": "Sample lesson 3",
-          "minutes": 4,
-          "intro": "Placeholder.",
+          "title": "Be the Bridge, Not the Fix",
+          "minutes": 5,
+          "intro": "Your role is to support and connect, not to be someone's therapist.",
           "sections": [
             {
-              "h": "Heading",
-              "p": [
-                "Placeholder paragraph."
-              ],
+              "h": "What a bridge does",
               "list": [
-                "Point"
+                "Listens and takes them seriously",
+                "Encourages professional support, like a GP or psychologist",
+                "Shares crisis lines if things are serious",
+                "Follows up later"
+              ]
+            },
+            {
+              "h": "Healthy boundaries",
+              "list": [
+                "You can't fix someone's mental health for them",
+                "Don't promise to keep secrets if someone's safety is at risk",
+                "Look after your own wellbeing too",
+                "Ask for help yourself if supporting someone feels heavy"
+              ]
+            },
+            {
+              "h": "Know where to point people",
+              "p": [
+                "In an emergency, call 000. For 24/7 crisis support in Australia, Lifeline is on 13 11 14. A GP is a good first step for ongoing support."
               ]
             }
           ],
-          "example": "Placeholder.",
-          "takeaway": "Placeholder."
+          "example": "Sara listens to her friend, helps her book a GP appointment and checks in after. She also tells her own partner she needs a quiet night to recharge.",
+          "takeaway": "Support, connect and follow up. Looking after yourself is part of the role. This program doesn't make you an accredited first aider.",
+          "displayOrder": 3
         }
       ],
       "videos": [
         {
           "id": "p4v1",
-          "title": "Sample video 1",
-          "description": "Placeholder.",
-          "duration": 70,
+          "title": "Not All Struggles Are Loud",
+          "description": "Spotting signs that someone may be having a hard time.",
+          "duration": 76,
           "mediaUrl": null,
-          "thumbnailUrl": null
+          "thumbnailUrl": null,
+          "completionRule": {
+            "type": "percent_played",
+            "useConfig": true
+          }
         },
         {
           "id": "p4v2",
-          "title": "Sample video 2",
-          "description": "Placeholder.",
-          "duration": 80,
+          "title": "Checking In Doesn't Need a Script",
+          "description": "Simple ways to start a caring conversation.",
+          "duration": 83,
           "mediaUrl": null,
-          "thumbnailUrl": null
+          "thumbnailUrl": null,
+          "completionRule": {
+            "type": "percent_played",
+            "useConfig": true
+          }
         },
         {
           "id": "p4v3",
-          "title": "Sample video 3",
-          "description": "Placeholder.",
+          "title": "You're a Bridge, Not a Therapist",
+          "description": "Your role, your limits, and where to point people.",
           "duration": 90,
           "mediaUrl": null,
-          "thumbnailUrl": null
+          "thumbnailUrl": null,
+          "completionRule": {
+            "type": "percent_played",
+            "useConfig": true
+          }
         }
       ],
       "activity": {
         "id": "p4a",
-        "title": "Sample activity",
-        "purpose": "Placeholder.",
-        "instructions": "Placeholder.",
+        "title": "Your Role in Someone's Mental Health Journey",
+        "purpose": "Plan how you might support someone, while respecting your own limits.",
+        "instructions": "Think of someone you care about, or imagine a scenario. No names or personal details needed.",
         "prompts": [
           {
             "id": "q1",
-            "q": "Placeholder question 1?",
-            "chips": [
-              "calm",
-              "tired"
-            ],
-            "optional": true
+            "q": "What changes might tell you this person is struggling?",
+            "optional": true,
+            "responseType": "text"
           },
           {
             "id": "q2",
-            "q": "Placeholder question 2?",
-            "chips": [],
-            "optional": true
+            "q": "How would you start the conversation? Write your opening line.",
+            "optional": true,
+            "responseType": "text"
+          },
+          {
+            "id": "q3",
+            "q": "What support could you point them towards?",
+            "chips": [
+              "GP",
+              "Psychologist or counsellor",
+              "Lifeline 13 11 14",
+              "Trusted family or friend",
+              "Workplace EAP"
+            ],
+            "optional": true,
+            "responseType": "chips_and_text"
+          },
+          {
+            "id": "q4",
+            "q": "What are your limits, and how will you look after yourself?",
+            "optional": true,
+            "responseType": "text"
           }
         ]
       },
       "quiz": {
         "id": "p4q",
-        "passThreshold": null,
         "questions": [
           {
-            "id": "p4q-1",
             "type": "mc",
-            "q": "Sample question 1",
+            "q": "Which might suggest someone is struggling?",
             "options": [
-              "A",
-              "B",
-              "C",
-              "D"
+              "Withdrawing from friends and changes in their usual behaviour",
+              "Having one bad day",
+              "Changing jobs",
+              "Being quiet in a single meeting"
             ],
-            "answer": 1,
-            "explain": "Placeholder."
+            "answer": 0,
+            "explain": "Lasting changes in behaviour and connection are more meaningful than one-off moments.",
+            "id": "p4q-1"
           },
           {
-            "id": "p4q-2",
+            "type": "mc",
+            "q": "Which is a good way to start a check-in?",
+            "options": [
+              "\"What's wrong with you?\"",
+              "\"I've noticed you seem quieter lately. How are you going?\"",
+              "\"Just think positive.\"",
+              "Bring it up in front of the group"
+            ],
+            "answer": 1,
+            "explain": "Start privately with what you've noticed, and ask an open question.",
+            "id": "p4q-2"
+          },
+          {
             "type": "tf",
-            "q": "Sample question 2",
+            "q": "As a support person, your role is to diagnose and fix the problem.",
             "options": [
               "True",
               "False"
             ],
-            "answer": 0,
-            "explain": "Placeholder."
+            "answer": 1,
+            "explain": "Your role is to be a bridge: listen, support and connect them to professional help.",
+            "id": "p4q-3"
           },
           {
-            "id": "p4q-3",
             "type": "mc",
-            "q": "Sample question 3",
+            "q": "A friend says they've felt hopeless for weeks. What's a helpful step?",
             "options": [
-              "A",
-              "B",
-              "C",
-              "D"
+              "Tell them everyone feels that way",
+              "Listen, and encourage them to see a GP or mental health professional",
+              "Promise to keep it secret no matter what",
+              "Change the subject"
             ],
             "answer": 1,
-            "explain": "Placeholder."
+            "explain": "Listening and encouraging professional support is helpful. Don't promise secrecy if their safety may be at risk.",
+            "id": "p4q-4"
           },
           {
-            "id": "p4q-4",
-            "type": "tf",
-            "q": "Sample question 4",
-            "options": [
-              "True",
-              "False"
-            ],
-            "answer": 0,
-            "explain": "Placeholder."
-          },
-          {
-            "id": "p4q-5",
             "type": "mc",
-            "q": "Sample question 5",
+            "q": "If someone is in immediate danger in Australia, you should:",
             "options": [
-              "A",
-              "B",
-              "C",
-              "D"
+              "Wait and see how they are tomorrow",
+              "Call 000",
+              "Post about it online",
+              "Send them an email"
             ],
             "answer": 1,
-            "explain": "Placeholder."
+            "explain": "For immediate danger, call 000.",
+            "id": "p4q-5"
           }
-        ]
+        ],
+        "title": "Phase 4 quiz",
+        "passThreshold": null
+      },
+      "color": "#D64938",
+      "pointsAwarded": null,
+      "unlockRequirements": {
+        "previousPhaseCompleted": true
       }
     }
-  ]
+  ],
+  "status": "draft",
+  "contentVersion": "0.1.0-draft",
+  "displayOrder": 1,
+  "coverImage": null
 }

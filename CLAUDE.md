@@ -30,6 +30,11 @@ Owner: Paras (ThunderClap). Talk to Paras in Hinglish; client-facing text in for
 | Progress events (transaction + user row lock, completion once) | `app/Services/Progress/ProgressEventHandler.php` |
 | ProgramProgress JSON shape (**only place to change the shape**) | `app/Services/Progress/ProgressPresenter.php` |
 | Idempotency-Key | `app/Http/Middleware/EnsureIdempotency.php` |
+| Questionnaire → focus phases (port of `recommendation_engine.dart`) + therapist focus areas; `PUT /me/assessment` merges answers | `app/Domain/RecommendationEngine.php`, `app/Http/Controllers/Api/AssessmentController.php` |
+| Home screen (`GET /me/home`: continue card, your focus, points) | `app/Http/Controllers/Api/HomeController.php` |
+| Per-action progress endpoints (lesson read / video / activity / quiz → same `ProgressEventHandler`) | `app/Http/Controllers/Api/ProgramActionController.php` |
+| Focus areas (therapist specialties, booking `focus`, therapist ordering) | `config/mindease.php` `focus_areas`, `GET /focus-areas` |
+| Content: real app content in `database/content`; tests use `tests/fixtures/content` (sample) | |
 | Booking: slots (therapist tz, DST-safe), lifecycle, refunds | `app/Services/Booking/SlotService.php`, `BookingService.php`, `BookingPresenter.php` |
 | Stripe (only via `PaymentGateway`; tests bind `tests/Fakes/FakePaymentGateway`) + webhook | `app/Services/Payments/`, `app/Http/Controllers/Webhooks/StripeWebhookController.php` |
 | Zoom Video SDK JWT | `app/Services/Video/ZoomVideoToken.php` |
@@ -68,7 +73,7 @@ Done: auth (register/login/refresh rotation/reset + verify + confirm/logout/dele
 
 Open items:
 1. Get `user_progress.dart` from the mobile team → match `ProgressPresenter` output to `UserProgress.toJson()` exactly.
-2. Replace `database/content/*.json` (SAMPLE) with the app's real `assets/content/*.json`.
+2. ~~Real content~~ done (copied from the Flutter app). Still no video files: every `mediaUrl` is null until the client supplies them.
 3. Reset link → web page `GET /reset-password` (`resources/views/reset-password.blade.php`, default `MINDEASE_RESET_URL`). Servers with `MINDEASE_RESET_URL=mindease://…` in `.env` must update it. Mail check: `php artisan mindease:test-mail you@example.com`.
 4. Email verification? (not in contract — ask client).
 5. Staging deploy in ap-southeast-2 (SES Sydney for mail, queue worker, scheduler).

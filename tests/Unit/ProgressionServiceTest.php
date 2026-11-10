@@ -16,7 +16,7 @@ class ProgressionServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $dir = dirname(__DIR__, 2).'/database/content';
+        $dir = dirname(__DIR__).'/fixtures/content';
         $this->program = json_decode(file_get_contents("{$dir}/mhfa_program.json"), true);
         $this->config = json_decode(file_get_contents("{$dir}/app_config.json"), true);
     }

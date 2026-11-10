@@ -40,6 +40,8 @@ class Booking extends Model
             'cancelled_at' => 'datetime',
             'price_cents' => 'integer',
             'notes' => 'encrypted',
+            'focus' => 'encrypted:array',
+            'contact_mobile' => 'encrypted',
         ];
     }
 

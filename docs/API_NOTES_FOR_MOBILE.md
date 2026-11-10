@@ -69,12 +69,94 @@ Live docs (local): `http://localhost:8000/docs/api` · OpenAPI JSON: `/docs/api.
 ## Content
 
 - Responses are the app's JSON files verbatim. Send `If-None-Match: <ETag>` to get `304`. `X-Content-Version` header carries `contentVersion`.
+- **The server now has the real content** (the app's `assets/content/*.json`), not the "SAMPLE / Placeholder" files. It goes live when the server runs `php artisan mindease:import-content`.
+- **Videos:** every video still has `mediaUrl: null` and `thumbnailUrl: null`, because no video files have been supplied yet. Until they are, show the preview player (`app_config.previewVideosWithoutMedia: true`). When the client delivers the 12 videos, the URLs get filled in and this flag becomes `false`; the shape doesn't change.
 
-## Assessment
+### Question types in a program (`GET /programs/{programId}`)
 
-- `PUT /me/assessment` is a full replace. Send the whole document each time.
+**Activity prompts** (`phases[].activity.prompts[]`) are free-text reflection questions, all optional. `responseType` says what to show:
 
-## Progress events
+| `responseType` | Show |
+|---|---|
+| `text` | A multi-line text box |
+| `chips_and_text` | The `chips` as tappable tags (pick any) **and** a text box |
+
+Save them as `answers: { "<prompt id>": { "text": "…", "chips": ["Head", "Jaw"] } }`. There is **no fill-in-the-blanks type**. If the UI shows "fill in the blank" for a `text` prompt, it's the same thing: send what the user wrote as `text`.
+
+**Quiz questions** (`phases[].quiz.questions[]`): `type` is `mc` (multiple choice, usually 4 `options`) or `tf` (true/false, `options: ["True","False"]`). `answer` is the 0-based index of the correct option, and `explain` is shown after Submit.
+
+## Onboarding questionnaire (`/me/assessment`)
+
+**Fixed:** answers from earlier steps were lost because each `PUT` replaced the whole document. Now:
+
+- `PUT /me/assessment` **merges**. Send only the current step: `{ "answers": { "stress": "high" }, "step": 3 }`. Every earlier answer is kept. Sending `null` for a key removes that answer. Sending the whole document still works.
+- Fields you leave out keep their saved value. When the user finishes, send `completedAt` (ISO time). For a retake, send `"completedAt": null`.
+- Values: single/mood questions take a string (`"low"`), multi questions take a list (`["stress","support"]`).
+
+**New: `recommendation`** in the `GET` and `PUT` responses. It's `null` until something is answered. It drives the Results, "Your focus" and "Your plan" screens:
+
+```jsonc
+"recommendation": {
+  "programId": "mhfa",
+  "focusPhases": [                         // in program order; at least one
+    { "phaseId": "p2", "number": 2, "title": "Check Yourself, Kindly", "color": "#…",
+      "reasons": ["You want help managing stress", "Your stress has been high lately"] }
+  ],
+  "showSupport": true,          // show the support card (crisis lines)
+  "suggestProfessional": true,  // gently suggest a GP / professional
+  "dailyMinutes": "10",         // answer to "time"
+  "learningStyle": "watch",     // answer to "style"
+  "preferredKind": "watch",     // learn | watch | activity | null: show this category first ("Suggested for you")
+  "focusAreas": [ { "key": "stress", "label": "Stress" } ]   // used to suggest therapists
+}
+```
+
+The rules are the app's `recommendation_engine.dart`, run on the server, so the app no longer has to compute them. They are not a diagnosis; keep the "not a diagnosis" copy.
+
+## Home screen (new): `GET /me/home`
+
+One request for "Continue where you left off", "Your focus" and points:
+
+```jsonc
+{
+  "program": { "id": "mhfa", "title": "…", "contentVersion": "0.1.0-draft" },
+  "continue": {                       // null when the program is finished
+    "phaseId": "p1", "phaseNumber": 1, "phaseTitle": "How's Your Head, Really?",
+    "kind": "watch",                  // learn (lesson) | watch (video) | activity | quiz
+    "itemId": "p1v2", "title": "…", "minutes": 2,
+    "resumePosition": 30,             // videos only: seconds to resume from
+    "percent": 45                     // how much of this phase is done
+  },
+  "focus": [ { "phaseId": "p2", "number": 2, "title": "…", "color": "#…", "reasons": ["…"],
+               "unlocked": false, "completed": false, "done": 0, "total": 8, "percent": 0 } ],   // [] before the questionnaire
+  "phases": [ { "phaseId": "p1", "number": 1, "title": "…", "color": "#…", "unlocked": true, "completed": false, "done": 3, "total": 8, "percent": 38 } ],
+  "points": 100,
+  "programCompletedAt": null,
+  "showSupport": false,
+  "questionnaireCompleted": true
+}
+```
+
+How `continue` is picked: in the first unlocked phase that isn't complete, a video the user stopped part-way comes first. Then the user's preferred kind (from "How do you like to learn?"), then lessons → videos → activity, and the quiz last. Tapping the card opens that item (`kind` + `itemId`). Call `GET /me/home` again after any progress call.
+
+## Program actions (new): one endpoint per action
+
+These are easier than the generic `/events` endpoint. They need **no `Idempotency-Key`** (repeating them is harmless) and apply the same rules: locked phase → `403 phase_locked`, and the server scores quizzes and awards points once. Each returns `{ progress, completion }`. `completion` is set when that call finished the phase; show the completion sheet then.
+
+| Action | Method + path | Body |
+|---|---|---|
+| `markLessonAsRead(lessonId)` | `POST /me/programs/{programId}/lessons/{lessonId}/read` | none |
+| `videoWatched(videoId)` | `POST /me/programs/{programId}/videos/{videoId}/progress` | `{ "position": 41.5, "watched": "1111100…" }` |
+| `submitActivity(activityId)` | `POST /me/programs/{programId}/activities/{activityId}` | `{ "answers": { "q1": { "text": "…", "chips": ["Head"] } }, "complete": true }` |
+| `submitQuiz(quizId)` | `POST /me/programs/{programId}/quizzes/{quizId}/submit` | `{ "answers": [1, 0, 2, 0, 1] }` |
+
+- `programId` is `mhfa`. Item ids come from `GET /programs/mhfa`, for example lesson `p1l1`, video `p1v1`, activity `p1a`, quiz `p1q`.
+- **Video:** `position` is the seconds into the video (used to resume). `watched` has one character per second of the video, `"1"` if that second was played. Send it every ~10 seconds and when the player closes. The video completes at 90% played; seeking ahead doesn't count.
+- **Activity:** `complete: false` saves a draft. `true` submits it and needs at least one answer (`422 activity_empty`).
+- **Quiz:** one 0-based option index per question, in order, and every question answered. The result is the last item of `progress.phases.<phaseId>.quiz.attempts` (`correct`, `total`, `score`, `passed`). The pass mark is 80%.
+- Unknown item id → `404 unknown_lesson` / `unknown_video` / `unknown_activity` / `unknown_quiz`.
+
+## Progress events (generic endpoint, still supported)
 
 - `Idempotency-Key` header is **required** on `POST /me/programs/{id}/events` (UUID per event; reuse the same key when retrying the same event).
   - Replay → same body, header `Idempotent-Replayed: true`.
@@ -120,21 +202,47 @@ Sessions are paid with Stripe and held over Zoom Video SDK. Prices, refund rules
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/therapists` | `[{ id, name, bio, specialties, photoUrl, timezone, priceCents, currency, sessionMinutes }]` |
-| GET | `/therapists/{id}` | **Added.** One therapist, same shape as a list item. `404 therapist_not_found` |
+| GET | `/focus-areas` | **New.** `[{ key, label }]`: the choices for "What would you like to focus on?" (the screen before the calendar) |
+| GET | `/therapists?focus=stress,sleep` | `[{ id, name, bio, specialties, photoUrl, timezone, priceCents, currency, sessionMinutes, matchedFocus }]`, **best match first** (see below) |
+| GET | `/therapists/{id}` | One therapist, same shape (without `matchedFocus`). `404 therapist_not_found` |
 | GET | `/therapists/{id}/slots?from=&to=` | ISO 8601. Default: now → +14 days, at most 31 days. `{ therapistId, sessionMinutes, slots: [{ startsAt, endsAt }] }`, UTC |
-| POST | `/me/bookings` | **`Idempotency-Key` required.** Body `{ therapistId, startsAt, notes? }`. `201 { booking, payment: { clientSecret, publishableKey } }` |
+| POST | `/me/bookings` | **`Idempotency-Key` required.** Body below. `201 { booking, payment: { clientSecret, publishableKey, status } }` |
 | GET | `/me/bookings?scope=upcoming\|past` | List of `booking` |
 | GET | `/me/bookings/{id}` | `booking` |
 | POST | `/me/bookings/{id}/cancel` | Returns `booking`. Safe to retry |
 | POST | `/me/bookings/{id}/video-token` | `{ token, sessionName, userIdentity, role, expiresAt }` for `flutter_zoom_videosdk` |
 
-`booking`: `{ id, status, cancelReason, startsAt, endsAt, holdExpiresAt, therapist: { id, name, photoUrl }, priceCents, currency, notes, payment: { status, amountCents, refundedCents } | null, canCancel, refundIfCancelledCents, joinOpensAt, createdAt }`
+**⚠ `specialties` changed shape:** it's now `[{ "key": "anxiety", "label": "Anxiety" }]` (it used to be a list of strings, and it was always empty). Admins pick specialties from the fixed focus-area list in the web panel, so each therapist needs them set there. Show `label`.
+
+**Therapists matched to the user:** the list is ordered by how many of the user's focus areas each therapist covers, then by name. `matchedFocus` lists the keys that matched, for a "Matches your focus" tag.
+- Pass the focus the user picked on the booking screen as `?focus=anxiety,sleep`.
+- Without `focus`, the onboarding questionnaire answers decide (`recommendation.focusAreas`).
+
+**Book a session, matching the booking screen:**
+
+```jsonc
+POST /me/bookings
+{
+  "therapistId": "…",                         // from GET /therapists
+  "startsAt": "2026-11-12T22:00:00.000Z",     // "dateTimeSlot": the chosen slot's startsAt from GET /therapists/{id}/slots
+  "focus": ["anxiety", "sleep"],              // optional, up to 5 keys from GET /focus-areas
+  "mobile": "0412 345 678",                   // optional, Australian mobile; saved to the profile too if it has none
+  "notes": "…",                               // optional
+  "paymentMethodId": "pm_…"                   // optional "paymentToken", see Payment flow
+}
+```
+
+The booking (and `GET /me/bookings`) now also returns `focus: [{ key, label }]` and `mobile`. The therapist sees both in the web panel. Errors: `422` with `field: focus.0`, `mobile` or `paymentMethodId`, and `402 payment_declined`.
+
+`booking`: `{ id, status, cancelReason, startsAt, endsAt, holdExpiresAt, therapist: { id, name, photoUrl }, priceCents, currency, notes, focus, mobile, payment: { status, amountCents, refundedCents } | null, canCancel, refundIfCancelledCents, joinOpensAt, createdAt }`
 
 `status`: `pending` (slot held, awaiting payment) → `confirmed` → `completed` | `no_show`; or `cancelled` (`cancelReason`: `user`, `expired`, `replaced`, `payment_failed`, `therapist`).
 
-**Payment flow**
-1. `POST /me/bookings` and present Stripe's PaymentSheet with `payment.clientSecret` and `payment.publishableKey`.
+**Payment flow.** Use either option:
+- **A. Stripe PaymentSheet (recommended).** Don't send `paymentMethodId`. Present the PaymentSheet with `payment.clientSecret` and `payment.publishableKey`.
+- **B. The app's own card form ("paymentToken").** Create the card with Stripe's SDK (`Stripe.instance.createPaymentMethod(...)` → `pm_…`) and send it as `paymentMethodId`. The server charges it straight away. `payment.status` will be `succeeded` / `processing` (go to step 2), or `requires_action` (3-D Secure: call `Stripe.instance.handleNextAction(payment.clientSecret)`, then go to step 2). A declined card returns `402 payment_declined` with Stripe's message, and the slot is released. Never send raw card numbers to our API.
+
+1. `POST /me/bookings`, then pay with A or B.
 2. When the sheet closes successfully, show "Confirming…" and poll `GET /me/bookings/{id}` every 2 seconds, for up to 30 seconds, until `status` is `confirmed`. The server confirms the booking only when Stripe notifies it; the app can never confirm a booking itself.
 3. An unpaid booking holds the slot until `holdExpiresAt` (15 minutes), then becomes `cancelled` / `expired`. If the user books the same slot again (for example, after the app was closed mid-payment), the earlier hold is replaced.
 4. The price is always set by the server. Any amount sent by the app is ignored.

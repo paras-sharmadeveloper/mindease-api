@@ -1,0 +1,12 @@
+{
+  "passThresholdPercent": 80,
+  "pointsPerPhase": 100,
+  "videoCompletePercent": 90,
+  "phaseRequirements": {
+    "lessons": true,
+    "videos": true,
+    "activity": true,
+    "quiz": true
+  },
+  "previewVideosWithoutMedia": true
+}
