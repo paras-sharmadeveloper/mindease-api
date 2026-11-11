@@ -20,6 +20,7 @@ input { width: 100%; padding: 12px 14px; border: 1.5px solid #E5DDD8; border-rad
 input:focus { outline: none; border-color: #D64938; }
 button { width: 100%; margin-top: 22px; padding: 13px; border: 0; border-radius: 999px; background: #4F3422; color: #fff; font: 800 16px/1 inherit; cursor: pointer; }
 button:hover { background: #3a2619; }
+.hint { margin-top: -10px; font-size: 14px; }
 .note { background: #F3EDE9; color: #4F3422; border-radius: 14px; padding: 12px 14px; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
 .error { background: #FBE3DF; color: #B93A2B; border-radius: 14px; padding: 12px 14px; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
 </style>
@@ -28,7 +29,8 @@ button:hover { background: #3a2619; }
 <header class="hero"><span class="logo">M</span>MindEase</header>
 <main class="card">
   <h1>API documentation</h1>
-  <p>Sign in with an authorised MindEase account to view the API documentation.</p>
+  <p>You need a <b>MindEase developer account</b> to view the API documentation. App and therapist accounts can't sign in here.</p>
+  <p class="hint">Don't have one? Ask the MindEase admin team to create a developer account for you.</p>
 
   @if (session('docs_status') && ! $errors->any())
     <div class="note" role="status">{{ session('docs_status') }}</div>

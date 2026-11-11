@@ -49,6 +49,12 @@ class DatabaseSeeder extends Seeder
                 ['name' => 'MindEase Admin', 'password' => 'password123'],
             )->forceFill(['role' => User::ROLE_ADMIN])->save();
             $this->command?->info('Demo admin (web panel): admin@mindease.test / password123');
+
+            User::firstOrCreate(
+                ['email' => 'dev@mindease.test'],
+                ['name' => 'MindEase Developer', 'password' => 'password123'],
+            )->forceFill(['role' => User::ROLE_DEVELOPER])->save();
+            $this->command?->info('Demo developer (API docs at /docs/login): dev@mindease.test / password123');
         }
     }
 }

@@ -28,6 +28,9 @@ class User extends Authenticatable
 
     public const ROLE_ADMIN = 'admin';
 
+    // Docs only (/docs/api, /docs/panel, /developers). No panel access; in the app it's an ordinary account.
+    public const ROLE_DEVELOPER = 'developer';
+
     /**
      * Keeps `name` (contract `user.name`, panel, bookings) and first/last name in step:
      * setting first/last rebuilds `name`; setting only `name` (register, panel, seeders) splits it.

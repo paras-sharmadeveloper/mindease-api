@@ -41,7 +41,7 @@ class DocsAuthController extends Controller
             $ok = false;
         }
         if (! $user || ! $ok || ! EnsureDocsAccess::allowed($user)) {
-            throw ValidationException::withMessages(['email' => 'These details are not valid, or this account cannot view the docs.']);
+            throw ValidationException::withMessages(['email' => 'These details are not valid, or this isn\'t a developer account.']);
         }
 
         Auth::guard('web')->login($user);

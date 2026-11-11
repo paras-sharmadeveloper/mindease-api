@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\DeveloperSeeder;
+use Illuminate\Support\Facades\Hash;
 
 /** /docs/api, /docs/panel, their JSON and /developers need a sign-in at /docs/login (admin by default). */
 class DocsAccessTest extends ApiTestCase
@@ -22,7 +24,7 @@ class DocsAccessTest extends ApiTestCase
         }
         $this->get('/docs/api.json')->assertStatus(401);
         $this->get('/docs/panel.json')->assertStatus(401);
-        $this->get('/docs/login')->assertOk()->assertSee('API documentation')->assertHeader('X-Frame-Options', 'DENY');
+        $this->get('/docs/login')->assertOk()->assertSee('MindEase developer account')->assertHeader('X-Frame-Options', 'DENY');
     }
 
     public function test_admin_signs_in_and_sees_docs(): void
@@ -109,5 +111,54 @@ class DocsAccessTest extends ApiTestCase
         $token = $admin->createToken('t')->plainTextToken;
 
         $this->withHeader('Authorization', 'Bearer '.$token)->get('/docs/api')->assertRedirect('/docs/login');
+    }
+
+    public function test_developer_sees_docs_but_not_the_panel(): void
+    {
+        $dev = User::factory()->create(['email' => 'dev@example.com']);
+        $dev->forceFill(['role' => User::ROLE_DEVELOPER])->save();
+
+        $this->post('/docs/login', ['email' => 'dev@example.com', 'password' => 'password'])->assertRedirect('/docs/api');
+        $this->get('/docs/api')->assertOk();
+        $this->get('/docs/panel')->assertOk();
+
+        $token = $dev->createToken('t')->plainTextToken;
+        $this->withHeader('Authorization', 'Bearer '.$token)->getJson('/v1/panel/me')
+            ->assertStatus(403)->assertJsonPath('error.code', 'forbidden');
+    }
+
+    public function test_developer_seeder_needs_email_and_password_from_env(): void
+    {
+        config(['mindease.docs.developer_email' => 'Dev@Example.com', 'mindease.docs.developer_password' => 'from-env-123']);
+        $this->seed(DeveloperSeeder::class);
+
+        $dev = User::where('email', 'dev@example.com')->firstOrFail();
+        $this->assertSame(User::ROLE_DEVELOPER, $dev->role);
+        $this->assertTrue(Hash::check('from-env-123', $dev->password));
+
+        // Re-run keeps the password.
+        config(['mindease.docs.developer_password' => 'other-456']);
+        $this->seed(DeveloperSeeder::class);
+        $this->assertTrue(Hash::check('from-env-123', $dev->fresh()->password));
+
+        // The account it made can sign in to the docs.
+        $this->post('/docs/login', ['email' => 'dev@example.com', 'password' => 'from-env-123'])->assertRedirect('/docs/api');
+
+        // Email or password missing (or too short): nothing is created.
+        $before = User::count();
+        foreach ([[null, 'long-enough-1'], ['dev2@example.com', null], ['dev2@example.com', 'short']] as [$email, $password]) {
+            config(['mindease.docs.developer_email' => $email, 'mindease.docs.developer_password' => $password]);
+            $this->seed(DeveloperSeeder::class);
+        }
+        $this->assertSame($before, User::count());
+    }
+
+    public function test_developer_seeder_never_downgrades_staff(): void
+    {
+        $this->admin();
+        config(['mindease.docs.developer_email' => 'admin@example.com']);
+        $this->seed(DeveloperSeeder::class);
+
+        $this->assertSame(User::ROLE_ADMIN, User::where('email', 'admin@example.com')->value('role'));
     }
 }
