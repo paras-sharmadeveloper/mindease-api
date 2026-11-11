@@ -136,10 +136,12 @@ class DocsAccessTest extends ApiTestCase
         $this->assertSame(User::ROLE_DEVELOPER, $dev->role);
         $this->assertTrue(Hash::check('from-env-123', $dev->password));
 
-        // Re-run keeps the password.
+        // Re-run with a new .env password: the account takes it (fixes an account made earlier with another one).
         config(['mindease.docs.developer_password' => 'other-456']);
         $this->seed(DeveloperSeeder::class);
-        $this->assertTrue(Hash::check('from-env-123', $dev->fresh()->password));
+        $this->assertTrue(Hash::check('other-456', $dev->fresh()->password));
+        config(['mindease.docs.developer_password' => 'from-env-123']);
+        $this->seed(DeveloperSeeder::class);
 
         // The account it made can sign in to the docs.
         $this->post('/docs/login', ['email' => 'dev@example.com', 'password' => 'from-env-123'])->assertRedirect('/docs/api');

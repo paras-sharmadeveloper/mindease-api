@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -15,7 +16,8 @@ use Illuminate\Support\Str;
  *   php artisan config:clear && php artisan db:seed --class=DeveloperSeeder --force
  *
  * No email or password in the code. `developer` has no web panel access.
- * Safe to re-run: an existing account keeps the password it has, and becomes a developer if it was an app user.
+ * .env is the source of truth: re-running sets the account's password to MINDEASE_DEV_PASSWORD (and role
+ * developer if it was an app user). Admin and therapist accounts are never changed.
  */
 class DeveloperSeeder extends Seeder
 {
@@ -44,8 +46,11 @@ class DeveloperSeeder extends Seeder
 
                 return;
             }
-            $user->forceFill(['role' => User::ROLE_DEVELOPER])->save();
-            $this->command?->info("Developer {$email} already exists (password unchanged).");
+            $changed = ! Hash::check($password, $user->password);
+            $user->forceFill(['role' => User::ROLE_DEVELOPER] + ($changed ? ['password' => $password] : []))->save();
+            $this->command?->info($changed
+                ? "Developer {$email} already existed: password set from MINDEASE_DEV_PASSWORD."
+                : "Developer {$email} already exists; password already matches MINDEASE_DEV_PASSWORD.");
 
             return;
         }
