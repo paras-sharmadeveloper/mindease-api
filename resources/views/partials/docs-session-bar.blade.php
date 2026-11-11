@@ -1,10 +1,12 @@
-{{-- Signed-in bar for the docs pages: who is signed in, time left, sign out. Session ends at $expiresAt (absolute). --}}
+{{-- Signed-in bar for the docs pages: who is signed in, sign out, and time left when a limit is set. --}}
 @php($docsUser = auth('web')->user())
 @php($docsExpires = \App\Http\Middleware\EnsureDocsAccess::expiresAt())
-@if ($docsUser && $docsExpires)
+@if ($docsUser)
 <div id="me-docs-bar" role="region" aria-label="Docs session">
   <span class="me-docs-who">{{ $docsUser->email }}</span>
+  @if ($docsExpires)
   <span class="me-docs-left" id="me-docs-left" data-expires="{{ $docsExpires->getTimestamp() }}"></span>
+  @endif
   <form method="POST" action="{{ route('docs.logout') }}">
     @csrf
     <button type="submit">Sign out</button>
@@ -24,6 +26,7 @@
 <script>
   (function () {
     var el = document.getElementById('me-docs-left');
+    if (!el) return;
     var expires = parseInt(el.dataset.expires, 10) * 1000;
     function tick() {
       var ms = expires - Date.now();

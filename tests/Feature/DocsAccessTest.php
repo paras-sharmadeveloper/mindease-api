@@ -76,8 +76,19 @@ class DocsAccessTest extends ApiTestCase
         $this->post('/docs/login', ['email' => 'admin@example.com', 'password' => 'password'])->assertStatus(429);
     }
 
-    public function test_sign_in_ends_after_30_minutes_and_page_has_sign_out(): void
+    public function test_no_time_limit_by_default_and_page_has_sign_out(): void
     {
+        $this->admin();
+        $this->post('/docs/login', ['email' => 'admin@example.com', 'password' => 'password']);
+
+        $this->get('/docs/api')->assertOk()->assertSee('Sign out')->assertDontSee('data-expires=', false);
+        $this->travel(3)->hours();
+        $this->get('/docs/api')->assertOk();
+    }
+
+    public function test_optional_time_limit_ends_the_sign_in(): void
+    {
+        config(['mindease.docs.session_minutes' => 30]);
         $this->admin();
         $this->post('/docs/login', ['email' => 'admin@example.com', 'password' => 'password']);
 

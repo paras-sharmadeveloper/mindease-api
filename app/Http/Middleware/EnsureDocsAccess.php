@@ -22,7 +22,7 @@ class EnsureDocsAccess
 
         if (! $user || ! self::allowed($user) || self::expired()) {
             if ($user) {
-                // Role no longer qualifies, or the docs sign-in is older than mindease.docs.session_minutes.
+                // Role no longer qualifies, or the docs sign-in is past its time limit (if one is set).
                 Auth::guard('web')->logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
@@ -49,18 +49,23 @@ class EnsureDocsAccess
         return $response;
     }
 
-    /** When the current docs sign-in ends, or null if there is none. */
+    /** When the current docs sign-in ends, or null when there is no time limit (or no sign-in). */
     public static function expiresAt(): ?\Carbon\CarbonImmutable
     {
+        $minutes = (int) config('mindease.docs.session_minutes', 0);
         $at = session(self::SIGNED_IN_AT);
 
-        return is_int($at)
-            ? \Carbon\CarbonImmutable::createFromTimestamp($at)->addMinutes((int) config('mindease.docs.session_minutes', 30))
+        return $minutes > 0 && is_int($at)
+            ? \Carbon\CarbonImmutable::createFromTimestamp($at)->addMinutes($minutes)
             : null;
     }
 
+    /** Only with a time limit set (mindease.docs.session_minutes > 0). Otherwise the normal session lifetime applies. */
     public static function expired(): bool
     {
+        if ((int) config('mindease.docs.session_minutes', 0) <= 0) {
+            return false;
+        }
         $expires = self::expiresAt();
 
         return ! $expires || $expires->isPast();

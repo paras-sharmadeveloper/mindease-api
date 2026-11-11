@@ -75,8 +75,9 @@ return [
         // Account made by DeveloperSeeder. Both are required; the seeder does nothing without them.
         'developer_email' => env('MINDEASE_DEV_EMAIL'),
         'developer_password' => env('MINDEASE_DEV_PASSWORD'),
-        // A docs sign-in lasts this long from sign-in (not from last activity), then a new sign-in is needed.
-        'session_minutes' => (int) env('MINDEASE_DOCS_SESSION_MINUTES', 30),
+        // Optional hard limit on a docs sign-in, in minutes from sign-in. 0 (default) = no limit: the sign-in
+        // lasts until Sign out or the normal session lifetime (SESSION_LIFETIME, minutes idle).
+        'session_minutes' => (int) env('MINDEASE_DOCS_SESSION_MINUTES', 0),
     ],
 
     // Fallbacks used only when app_config has not been imported yet.
