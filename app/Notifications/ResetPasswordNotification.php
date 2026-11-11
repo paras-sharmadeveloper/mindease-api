@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -23,10 +24,13 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = strtr(config('mindease.password_reset.url'), [
-            '{token}' => urlencode($this->token),
-            '{email}' => urlencode($notifiable->email),
-        ]);
+        // Therapists and admins use the web panel, not the app: always our own reset page, which then links to the panel.
+        $url = in_array($notifiable->role, [User::ROLE_THERAPIST, User::ROLE_ADMIN], true)
+            ? route('password.reset', ['token' => $this->token, 'email' => $notifiable->email, 'for' => 'panel'])
+            : strtr(config('mindease.password_reset.url'), [
+                '{token}' => urlencode($this->token),
+                '{email}' => urlencode($notifiable->email),
+            ]);
 
         $minutes = config('auth.passwords.users.expire', 60);
 

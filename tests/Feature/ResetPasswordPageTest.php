@@ -41,4 +41,34 @@ class ResetPasswordPageTest extends ApiTestCase
                 && str_ends_with($url, '&email=asha%40example.com');
         });
     }
+
+    public function test_therapists_and_admins_get_a_link_back_to_the_panel(): void
+    {
+        config(['mindease.password_reset.url' => 'mindease://reset-password?token={token}&email={email}', 'mindease.panel_url' => 'https://app.mindease.me']);
+        Notification::fake();
+        $therapist = User::factory()->create(['email' => 'dr@example.com']);
+        $therapist->forceFill(['role' => User::ROLE_THERAPIST])->save();
+
+        $this->postJson('/v1/auth/password-reset', ['email' => 'dr@example.com'])->assertStatus(202);
+
+        Notification::assertSentTo($therapist, ResetPasswordNotification::class, function (ResetPasswordNotification $n) use ($therapist) {
+            $url = $n->toMail($therapist)->actionUrl;
+
+            // Our own reset page even when the app uses a deep link, marked for the panel.
+            return str_starts_with($url, url('/reset-password').'?') && str_contains($url, 'for=panel')
+                && str_contains($url, 'email=dr%40example.com');
+        });
+
+        $this->get('/reset-password?token=abc&email=dr%40example.com&for=panel')->assertOk()
+            ->assertSee('Sign in to the MindEase panel')
+            ->assertSee('href="https://app.mindease.me"', false)
+            ->assertDontSee('Open the MindEase app');
+    }
+
+    public function test_app_users_keep_the_app_wording(): void
+    {
+        $this->get('/reset-password?token=abc&email=asha%40example.com')->assertOk()
+            ->assertSee('Open the MindEase app')
+            ->assertDontSee('Sign in to the MindEase panel');
+    }
 }

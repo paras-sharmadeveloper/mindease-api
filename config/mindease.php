@@ -9,6 +9,10 @@ return [
         'refresh_ttl_days' => (int) env('MINDEASE_REFRESH_TTL_DAYS', 60),
     ],
 
+    // Web panel (mindease-web) address. Therapists' and admins' reset emails and the reset page link here.
+    // Default: the first CORS origin (the panel's origin).
+    'panel_url' => rtrim((string) env('MINDEASE_PANEL_URL', explode(',', (string) env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173'))[0]), '/'),
+
     'password_reset' => [
         // Link in the reset email. {token} and {email} are replaced (URL-encoded).
         // Default: this API's own reset page (GET /reset-password), which works for everyone.

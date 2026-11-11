@@ -41,6 +41,9 @@ button.primary { width: 100%; height: 56px; border: 0; border-radius: 999px; bac
 button.primary:hover { background: var(--red-deep); }
 button.primary:disabled { background: var(--grey30); cursor: not-allowed; }
 button.primary:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
+a.primary { display: grid; place-items: center; width: 100%; height: 56px; margin-top: 20px; border-radius: 999px; background: var(--red); color: var(--white); font: 800 16px system-ui, sans-serif; text-decoration: none; }
+a.primary:hover { background: var(--red-deep); }
+a.primary:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
 .banner { border-radius: 18px; padding: 14px 16px; margin-bottom: 16px; font-weight: 700; font-size: 14.5px; }
 .banner.error { background: var(--red-soft); color: var(--red-deep); }
 .banner.ok { background: var(--ok-bg); color: var(--ok); }
@@ -96,7 +99,12 @@ button.primary:focus-visible { outline: 3px solid var(--green); outline-offset: 
   <section id="done" hidden>
     <div class="banner ok" role="status">Your password has been changed.</div>
     <h1>You're all set</h1>
-    <p class="muted">Open the MindEase app and sign in with your new password. You've been signed out on your other devices.</p>
+    @if ($panelUrl)
+      <p class="muted">Sign in to the MindEase panel with your new password. You've been signed out on your other devices.</p>
+      <a class="primary" href="{{ $panelUrl }}">Go to sign in</a>
+    @else
+      <p class="muted">Open the MindEase app and sign in with your new password. You've been signed out on your other devices.</p>
+    @endif
   </section>
 
   {{-- 4. Link wrong or expired: send a new one --}}

@@ -27,7 +27,8 @@ Route::get('developers', function () {
 
 // Password reset page: the reset email links here (MINDEASE_RESET_URL). It calls the public
 // /v1/auth/password-reset/verify and /confirm endpoints, so all rules and rate limits stay in the API.
-Route::get('reset-password', function () {
+// `for=panel` (therapists and admins): the done screen links to the web panel instead of the app.
+Route::get('reset-password', function (Request $request) {
     $nonce = Str::random(24);
 
     return response()
@@ -35,6 +36,7 @@ Route::get('reset-password', function () {
             'nonce' => $nonce,
             'apiBase' => url('/v1'),
             'minutes' => config('auth.passwords.users.expire', 60),
+            'panelUrl' => $request->query('for') === 'panel' ? config('mindease.panel_url') : null,
         ])
         ->withHeaders([
             'Cache-Control' => 'no-store',
