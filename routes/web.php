@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\DocsAuthController;
+use App\Http\Middleware\EnsureDocsAccess;
 use App\Models\User;
 use App\Services\ProfilePhoto;
 use Illuminate\Http\Request;
@@ -8,14 +10,20 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-Route::get('/', fn () => response()->json(['name' => 'MindEase API', 'version' => 'v1', 'docs' => '/docs/api', 'panelDocs' => '/docs/panel', 'developers' => '/developers']));
+// Visitors opening the API host in a browser go to the docs (which ask for a sign-in).
+Route::get('/', fn () => redirect('/docs/api'));
 
-// Developer portal: guides + reference + "Try it" console for the mobile team.
+// Sign-in for the API docs (/docs/api, /docs/panel, /developers). Web session; only roles in mindease.docs.roles.
+Route::get('docs/login', [DocsAuthController::class, 'show'])->name('docs.login');
+Route::post('docs/login', [DocsAuthController::class, 'login'])->middleware('throttle:docs-login')->name('docs.login.submit');
+Route::post('docs/logout', [DocsAuthController::class, 'logout'])->name('docs.logout');
+
+// Developer portal: guides + reference + "Try it" console for the mobile team. Needs a docs sign-in.
 Route::get('developers', function () {
     abort_unless(config('mindease.developer_docs'), 404);
 
     return view('developers', ['baseUrl' => url('/v1')]);
-});
+})->middleware(EnsureDocsAccess::class);
 
 // Password reset page: the reset email links here (MINDEASE_RESET_URL). It calls the public
 // /v1/auth/password-reset/verify and /confirm endpoints, so all rules and rate limits stay in the API.

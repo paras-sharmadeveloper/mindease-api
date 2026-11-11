@@ -21,4 +21,10 @@ return [
     'ui' => [
         'title' => 'MindEase Mobile App API',
     ],
+
+    // Docs need a sign-in at /docs/login in every environment (replaces Scramble's local-only bypass).
+    'middleware' => [
+        'web',
+        \App\Http\Middleware\EnsureDocsAccess::class,
+    ],
 ];

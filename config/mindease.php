@@ -64,6 +64,13 @@ return [
     // Developer portal at /developers (guides, reference, "Try it" console). Off in production unless enabled.
     'developer_docs' => (bool) env('MINDEASE_DEVELOPER_DOCS', env('APP_ENV') !== 'production'),
 
+    // Who can sign in at /docs/login to view /docs/api, /docs/panel and /developers (users.role values, comma separated).
+    'docs' => [
+        'roles' => array_values(array_filter(array_map('trim', explode(',', (string) env('MINDEASE_DOCS_ROLES', 'admin'))))),
+        // A docs sign-in lasts this long from sign-in (not from last activity), then a new sign-in is needed.
+        'session_minutes' => (int) env('MINDEASE_DOCS_SESSION_MINUTES', 30),
+    ],
+
     // Fallbacks used only when app_config has not been imported yet.
     'defaults' => [
         'passThresholdPercent' => 80,

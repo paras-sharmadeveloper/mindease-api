@@ -1173,5 +1173,6 @@ paintAuth();
 })();
 </script>
 @endverbatim
+@include('partials.docs-session-bar')
 </body>
 </html>

@@ -9,7 +9,6 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Routing\Route;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -44,14 +43,17 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(10)->by('reset-ip:'.$request->ip()),
         ]);
 
+        // /docs/login form: per email+IP and per IP.
+        RateLimiter::for('docs-login', fn (Request $request) => [
+            Limit::perMinute(5)->by('docs-login:'.$emailKey($request)),
+            Limit::perMinute(20)->by('docs-login-ip:'.$request->ip()),
+        ]);
+
         RateLimiter::for('auth-general', fn (Request $request) => Limit::perMinute(30)->by('auth:'.$request->ip()));
 
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(180)->by($request->user()?->id ?: $request->ip()));
 
-        // Scramble serves /docs/api outside `local` only when this gate passes (same switch as /developers).
-        Gate::define('viewApiDocs', fn ($user = null) => (bool) config('mindease.developer_docs'));
-
-        // OpenAPI docs at /docs/api (local env only by default).
+        // OpenAPI docs at /docs/api and /docs/panel: sign-in required (EnsureDocsAccess, set in config/scramble.php).
         // Two separate documents: the mobile app (/docs/api) and the web panel (/docs/panel). Neither lists the other's routes.
         if (class_exists(Scramble::class)) {
             Scramble::afterOpenApiGenerated(function (OpenApi $openApi) {
