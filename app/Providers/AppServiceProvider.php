@@ -33,9 +33,17 @@ class AppServiceProvider extends ServiceProvider
         $emailKey = fn (Request $request) => Str::lower((string) $request->input('email')).'|'.$request->ip();
 
         // Contract: rate-limit login and reset.
+        // Per-email-per-hour stops a slow brute force on one account spread over many IPs.
         RateLimiter::for('auth-login', fn (Request $request) => [
             Limit::perMinute(5)->by('login:'.$emailKey($request)),
             Limit::perMinute(30)->by('login-ip:'.$request->ip()),
+            Limit::perHour(30)->by('login-email:'.Str::lower((string) $request->input('email'))),
+        ]);
+
+        // Sign-up bots. Kept loose enough for several people signing up behind one Wi-Fi or mobile network.
+        RateLimiter::for('auth-register', fn (Request $request) => [
+            Limit::perMinute(5)->by('register-ip:'.$request->ip()),
+            Limit::perHour(20)->by('register-ip-hour:'.$request->ip()),
         ]);
 
         RateLimiter::for('auth-reset', fn (Request $request) => [
@@ -43,10 +51,21 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(10)->by('reset-ip:'.$request->ip()),
         ]);
 
-        // /docs/login form: per email+IP and per IP.
+        // /docs/login form: per email+IP, per IP, and per email per hour (any IP).
         RateLimiter::for('docs-login', fn (Request $request) => [
             Limit::perMinute(5)->by('docs-login:'.$emailKey($request)),
             Limit::perMinute(20)->by('docs-login-ip:'.$request->ip()),
+            Limit::perHour(50)->by('docs-login-ip-hour:'.$request->ip()),
+            Limit::perHour(15)->by('docs-login-email:'.Str::lower((string) $request->input('email'))),
+        ]);
+
+        // Docs pages and their JSON (they also need a sign-in): stops scraping / hammering.
+        RateLimiter::for('docs', fn (Request $request) => Limit::perMinute(60)->by('docs:'.$request->ip()));
+
+        // POST /me/bookings: each call holds a slot for hold_minutes, so a bot could block every slot.
+        RateLimiter::for('bookings-create', fn (Request $request) => [
+            Limit::perMinute(5)->by('booking:'.($request->user()?->id ?: $request->ip())),
+            Limit::perHour(20)->by('booking-hour:'.($request->user()?->id ?: $request->ip())),
         ]);
 
         RateLimiter::for('auth-general', fn (Request $request) => Limit::perMinute(30)->by('auth:'.$request->ip()));

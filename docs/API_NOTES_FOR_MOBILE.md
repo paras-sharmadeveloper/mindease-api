@@ -22,6 +22,7 @@ Live docs (local): `http://localhost:8000/docs/api` · OpenAPI JSON: `/docs/api.
 - **Added:** `POST /auth/password-reset/confirm { email, token, password }` → `204`, or `422 invalid_reset_token`. The reset email links to a **web page**, `https://api.<domain>/reset-password?token=…&email=…`, where the user sets the new password; the app needs no reset screen. (A `mindease://` deep link is still possible via `MINDEASE_RESET_URL` if the app wants to handle it.) Confirming signs out all devices.
 - **Added:** `POST /auth/password-reset/verify { email, token }` → `204` if the link is still valid, or `422 invalid_reset_token` (`field: token`). It does **not** use up the token. Call it when the reset deep link opens: on `422` show "This link has expired" with a button to request a new one, instead of letting the user type a new password first. Shares the reset rate limit (5 per hour per email).
 - **Added:** `GET /me` → `user` (handy for a splash session check).
+- **Rate limits (bot protection):** `POST /auth/register` allows 5 sign-ups per minute and 20 per hour from one IP address. `POST /auth/login` also allows at most 30 attempts per hour for one email, from any IP address, on top of the existing per-minute limits. Over a limit, the API returns `429 rate_limited` with a `Retry-After` header (seconds). Show "Too many attempts. Please wait a moment and try again." and don't retry automatically.
 
 ## Account (new)
 
@@ -211,6 +212,8 @@ Sessions are paid with Stripe and held over Zoom Video SDK. Prices, refund rules
 | GET | `/me/bookings/{id}` | `booking` |
 | POST | `/me/bookings/{id}/cancel` | Returns `booking`. Safe to retry |
 | POST | `/me/bookings/{id}/video-token` | `{ token, sessionName, userIdentity, role, expiresAt }` for `flutter_zoom_videosdk` |
+
+**Rate limit:** `POST /me/bookings` allows 5 per minute and 20 per hour per user (each call holds a slot). Over the limit, the API returns `429 rate_limited` with `Retry-After`. Normal use, including retries with the same `Idempotency-Key`, stays well under it.
 
 **⚠ `specialties` changed shape:** it's now `[{ "key": "anxiety", "label": "Anxiety" }]` (it used to be a list of strings, and it was always empty). Admins pick specialties from the fixed focus-area list in the web panel, so each therapist needs them set there. Show `label`.
 

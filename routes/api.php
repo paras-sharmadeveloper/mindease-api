@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Route;
 
 // ---- Auth (no bearer token) ----------------------------------------------------------
 Route::prefix('auth')->group(function () {
-    Route::post('register', [AuthController::class, 'register'])->middleware('throttle:auth-general');
+    Route::post('register', [AuthController::class, 'register'])->middleware(['throttle:auth-general', 'throttle:auth-register']);
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:auth-login');
     Route::post('refresh', [AuthController::class, 'refresh'])->middleware('throttle:auth-general');
     Route::post('password-reset', [AuthController::class, 'requestPasswordReset'])->middleware('throttle:auth-reset');
@@ -71,7 +71,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('therapists', [TherapistController::class, 'index']);
     Route::get('therapists/{therapistId}', [TherapistController::class, 'show']);
     Route::get('therapists/{therapistId}/slots', [TherapistController::class, 'slots']);
-    Route::post('me/bookings', [BookingController::class, 'store'])->middleware('idempotent');
+    Route::post('me/bookings', [BookingController::class, 'store'])->middleware(['throttle:bookings-create', 'idempotent']);
     Route::get('me/bookings', [BookingController::class, 'index']);
     Route::get('me/bookings/{bookingId}', [BookingController::class, 'show']);
     Route::post('me/bookings/{bookingId}/cancel', [BookingController::class, 'cancel']);

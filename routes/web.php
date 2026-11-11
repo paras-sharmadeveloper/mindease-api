@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 Route::get('/', fn () => redirect('/docs/api'));
 
 // Sign-in for the API docs (/docs/api, /docs/panel, /developers). Web session; only roles in mindease.docs.roles.
-Route::get('docs/login', [DocsAuthController::class, 'show'])->name('docs.login');
+Route::get('docs/login', [DocsAuthController::class, 'show'])->middleware('throttle:docs')->name('docs.login');
 Route::post('docs/login', [DocsAuthController::class, 'login'])->middleware('throttle:docs-login')->name('docs.login.submit');
 Route::post('docs/logout', [DocsAuthController::class, 'logout'])->name('docs.logout');
 
@@ -23,7 +23,7 @@ Route::get('developers', function () {
     abort_unless(config('mindease.developer_docs'), 404);
 
     return view('developers', ['baseUrl' => url('/v1')]);
-})->middleware(EnsureDocsAccess::class);
+})->middleware(['throttle:docs', EnsureDocsAccess::class]);
 
 // Password reset page: the reset email links here (MINDEASE_RESET_URL). It calls the public
 // /v1/auth/password-reset/verify and /confirm endpoints, so all rules and rate limits stay in the API.

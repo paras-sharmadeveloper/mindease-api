@@ -421,4 +421,15 @@ class BookingTest extends ApiTestCase
 
         $this->book('2026-11-05T22:00:00.000Z', extra: ['paymentMethodId' => 'tok_visa'])->assertStatus(422)->assertJsonPath('error.field', 'paymentMethodId');
     }
+
+    public function test_creating_bookings_is_rate_limited(): void
+    {
+        $this->signIn();
+
+        // Same slot each time (replaces the user's own hold), so only the limiter can refuse.
+        for ($i = 0; $i < 5; $i++) {
+            $this->book()->assertCreated();
+        }
+        $this->book()->assertStatus(429)->assertJsonPath('error.code', 'rate_limited');
+    }
 }

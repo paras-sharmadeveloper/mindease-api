@@ -25,6 +25,7 @@ return [
     // Docs need a sign-in at /docs/login in every environment (replaces Scramble's local-only bypass).
     'middleware' => [
         'web',
+        'throttle:docs',
         \App\Http\Middleware\EnsureDocsAccess::class,
     ],
 ];
