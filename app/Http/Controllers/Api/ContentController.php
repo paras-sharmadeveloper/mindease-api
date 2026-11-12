@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
+use App\Models\LessonRead;
 use App\Models\Program;
+use App\Models\VideoProgress;
 use App\Services\ContentRepository;
 use App\Support\ContentResponse;
 use Dedoc\Scramble\Attributes\Group;
@@ -68,14 +70,99 @@ class ContentController extends Controller
     /**
      * Get a program.
      *
-     * The full program: phases, lessons, videos, activity and quiz. Same shape as `mhfa_program.json`.
+     * The full program: phases, lessons, videos, activity and quiz. Same shape as `mhfa_program.json`, plus
+     * per-user status: `is_read` (true/false) on every lesson, right after `intro`, set by
+     * `POST /me/programs/{programId}/lessons/{lessonId}/read`; and `is_video_watched` (true/false) on every
+     * video, true once the video is complete through `POST /me/programs/{programId}/videos/{videoId}/progress`
+     * (90% of its seconds played). The ETag is per user, so it changes when either status changes.
      */
     #[Group('Programs', 'Program content (phases, lessons, videos, activity, quiz). Cacheable with ETag / If-None-Match.', weight: 4)]
     public function program(Request $request, string $programId): Response
     {
         $program = $this->content->program($programId);
+        $userId = $request->user()->id;
 
-        return ContentResponse::make($request, $program->body, $program->etag, $program->content_version);
+        $readIds = LessonRead::where('user_id', $userId)
+            ->where('program_id', $program->id)
+            ->orderBy('lesson_id')
+            ->pluck('lesson_id')
+            ->all();
+
+        $watchedIds = VideoProgress::where('user_id', $userId)
+            ->where('program_id', $program->id)
+            ->whereNotNull('completed_at')
+            ->orderBy('video_id')
+            ->pluck('video_id')
+            ->all();
+
+        $json = $this->withUserStatus($program->body, array_flip($readIds), array_flip($watchedIds));
+        $etag = '"'.sha1($program->etag.'|'.implode(',', $readIds).'|'.implode(',', $watchedIds)).'"';
+
+        return ContentResponse::make($request, $json, $etag, $program->content_version);
+    }
+
+    /**
+     * Adds `is_read` to every lesson (right after `intro`) and `is_video_watched` to every video (at the end).
+     * Decodes as objects so `{}` stays `{}`.
+     *
+     * @param  array<string, int>  $readIds  lesson ids the user has read (as keys)
+     * @param  array<string, int>  $watchedIds  video ids the user has completed (as keys)
+     */
+    private function withUserStatus(string $body, array $readIds, array $watchedIds): string
+    {
+        $data = json_decode($body);
+        if (! is_object($data) || ! is_array($data->phases ?? null)) {
+            return $body;
+        }
+
+        foreach ($data->phases as $phase) {
+            if (! is_object($phase)) {
+                continue;
+            }
+            if (is_array($phase->lessons ?? null)) {
+                $phase->lessons = $this->flagItems($phase->lessons, 'is_read', $readIds, after: 'intro');
+            }
+            if (is_array($phase->videos ?? null)) {
+                $phase->videos = $this->flagItems($phase->videos, 'is_video_watched', $watchedIds);
+            }
+        }
+
+        return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
+    }
+
+    /**
+     * Sets `$flag` on each item (true when its id is in `$ids`), placed right after `$after`, or last.
+     *
+     * @param  array<int, mixed>  $items
+     * @param  array<string, int>  $ids
+     * @return array<int, mixed>
+     */
+    private function flagItems(array $items, string $flag, array $ids, ?string $after = null): array
+    {
+        foreach ($items as $i => $item) {
+            if (! is_object($item)) {
+                continue;
+            }
+            $value = isset($item->id) && isset($ids[$item->id]);
+            $out = new \stdClass;
+            $placed = false;
+            foreach (get_object_vars($item) as $key => $v) {
+                if ($key === $flag) {
+                    continue;
+                }
+                $out->{$key} = $v;
+                if ($key === $after) {
+                    $out->{$flag} = $value;
+                    $placed = true;
+                }
+            }
+            if (! $placed) {
+                $out->{$flag} = $value;
+            }
+            $items[$i] = $out;
+        }
+
+        return $items;
     }
 
     /**

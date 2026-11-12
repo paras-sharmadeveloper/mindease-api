@@ -56,4 +56,47 @@ class ContentTest extends ApiTestCase
         $program->assertJsonPath('phases.1.activity.prompts.0.responseType', 'chips_and_text');
         $this->getJson('/v1/questionnaires/onboarding')->assertOk()->assertJsonPath('questions.0.options.0.v', 'understand');
     }
+
+    public function test_program_lessons_carry_is_read_after_intro(): void
+    {
+        $this->signIn();
+
+        $first = $this->getJson('/v1/programs/mhfa')->assertOk()
+            ->assertJsonPath('phases.0.lessons.0.is_read', false);
+        $keys = array_keys($first->json('phases.0.lessons.0'));
+        $this->assertSame(array_search('intro', $keys, true) + 1, array_search('is_read', $keys, true));
+        $etag = $first->headers->get('ETag');
+
+        $lessonId = $first->json('phases.0.lessons.0.id');
+        $this->postJson("/v1/me/programs/mhfa/lessons/{$lessonId}/read")->assertOk();
+
+        $this->get('/v1/programs/mhfa', ['If-None-Match' => $etag, 'Accept' => 'application/json'])->assertOk();
+        $after = $this->getJson('/v1/programs/mhfa')->assertOk()
+            ->assertJsonPath('phases.0.lessons.0.is_read', true);
+        $this->assertNotSame($etag, $after->headers->get('ETag'));
+        if ($after->json('phases.0.lessons.1')) {
+            $after->assertJsonPath('phases.0.lessons.1.is_read', false);
+        }
+    }
+
+    public function test_program_videos_carry_is_video_watched(): void
+    {
+        $this->signIn();
+
+        $first = $this->getJson('/v1/programs/mhfa')->assertOk()
+            ->assertJsonPath('phases.0.videos.0.is_video_watched', false);
+        $etag = $first->headers->get('ETag');
+        $video = $first->json('phases.0.videos.0');
+        $base = "/v1/me/programs/mhfa/videos/{$video['id']}/progress";
+
+        // Partly watched: still false.
+        $this->postJson($base, ['position' => 1, 'watched' => '1'])->assertOk();
+        $this->getJson('/v1/programs/mhfa')->assertJsonPath('phases.0.videos.0.is_video_watched', false);
+
+        // Fully watched: true, and the old ETag no longer gives 304.
+        $this->postJson($base, ['position' => $video['duration'], 'watched' => str_repeat('1', (int) ceil($video['duration']))])->assertOk();
+        $this->get('/v1/programs/mhfa', ['If-None-Match' => $etag, 'Accept' => 'application/json'])->assertOk();
+        $this->getJson('/v1/programs/mhfa')->assertOk()
+            ->assertJsonPath('phases.0.videos.0.is_video_watched', true);
+    }
 }

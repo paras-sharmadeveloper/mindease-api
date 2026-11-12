@@ -71,7 +71,21 @@ Live docs (local): `http://localhost:8000/docs/api` · OpenAPI JSON: `/docs/api.
 
 - Responses are the app's JSON files verbatim. Send `If-None-Match: <ETag>` to get `304`. `X-Content-Version` header carries `contentVersion`.
 - **The server now has the real content** (the app's `assets/content/*.json`), not the "SAMPLE / Placeholder" files. It goes live when the server runs `php artisan mindease:import-content`.
-- **Videos:** every video still has `mediaUrl: null` and `thumbnailUrl: null`, because no video files have been supplied yet. Until they are, show the preview player (`app_config.previewVideosWithoutMedia: true`). When the client delivers the 12 videos, the URLs get filled in and this flag becomes `false`; the shape doesn't change.
+- **Videos (sample for now):** every video now has a **sample** `mediaUrl` (public MP4 test films from archive.org, 10+ minutes each) and a placeholder `thumbnailUrl` (PNG, 640×360, in the phase colour), so the real player and thumbnails can be built and tested. `app_config.previewVideosWithoutMedia` is now `false`. The video `duration` in the content (65–90 s) is still what counts for completion, so the video completes at 90% of that, not of the sample film's length. When the client delivers the 12 real videos, only the URLs change; the shape stays the same. Handle a `null` `mediaUrl` anyway (show the preview player).
+
+### Lesson read and video watched status in a program (`GET /programs/{programId}`)
+
+**New:** every lesson now has `is_read` (`true` / `false`) right after `intro`, for the signed-in user. It becomes `true` after `POST /me/programs/{programId}/lessons/{lessonId}/read`. The ETag is now per user and changes when a lesson is read, so a cached copy is refreshed (no stale `304`). Everything else in the response is unchanged.
+
+```json
+{ "id": "p1l1", "title": "…", "minutes": 4, "intro": "…", "is_read": true, "sections": [ … ] }
+```
+
+**New:** every video (`phases[].videos[]`) now has `is_video_watched` (`true` / `false`) as its last field. It becomes `true` once the video is complete through `POST /me/programs/{programId}/videos/{videoId}/progress` (90% of its seconds played, same rule as `progress`). Partly watched videos stay `false`. The per-user ETag also changes when a video is completed.
+
+```json
+{ "id": "p1v1", "title": "…", "duration": 70, "mediaUrl": null, "thumbnailUrl": null, "is_video_watched": true }
+```
 
 ### Question types in a program (`GET /programs/{programId}`)
 

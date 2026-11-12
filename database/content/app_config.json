@@ -8,5 +8,5 @@
     "activity": true,
     "quiz": true
   },
-  "previewVideosWithoutMedia": true
+  "previewVideosWithoutMedia": false
 }

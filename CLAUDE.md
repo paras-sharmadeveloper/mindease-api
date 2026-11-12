@@ -73,7 +73,7 @@ Done: auth (register/login/refresh rotation/reset + verify + confirm/logout/dele
 
 Open items:
 1. Get `user_progress.dart` from the mobile team → match `ProgressPresenter` output to `UserProgress.toJson()` exactly.
-2. ~~Real content~~ done (copied from the Flutter app). Still no video files: every `mediaUrl` is null until the client supplies them.
+2. ~~Real content~~ done (copied from the Flutter app). Still no real video files: videos use **sample** URLs (archive.org films + placehold.co thumbnails, `previewVideosWithoutMedia: false`) via `php artisan mindease:dummy-videos` (`app/Console/Commands/DummyVideos.php`; fills only null URLs, safe after panel edits; `--clear` removes them). Replace with the client's videos when they arrive.
 3. Reset link → web page `GET /reset-password` (`resources/views/reset-password.blade.php`, default `MINDEASE_RESET_URL`). Servers with `MINDEASE_RESET_URL=mindease://…` in `.env` must update it. Mail check: `php artisan mindease:test-mail you@example.com`.
 4. Email verification? (not in contract — ask client).
 5. Staging deploy in ap-southeast-2 (SES Sydney for mail, queue worker, scheduler).

@@ -134,8 +134,8 @@
           "title": "Let's Redefine Mental Health",
           "description": "Why mental health is something everyone has, not just a label for illness.",
           "duration": 72,
-          "mediaUrl": null,
-          "thumbnailUrl": null,
+          "mediaUrl": "https://archive.org/download/ElephantsDream/ed_1024_512kb.mp4",
+          "thumbnailUrl": "https://placehold.co/640x360/9BB068/FFFFFF/png?text=Phase%201%20-%20Video%201",
           "completionRule": {
             "type": "percent_played",
             "useConfig": true
@@ -146,8 +146,8 @@
           "title": "You're Not the Only One",
           "description": "Struggling is common. A short look at why that matters.",
           "duration": 65,
-          "mediaUrl": null,
-          "thumbnailUrl": null,
+          "mediaUrl": "https://archive.org/download/Sintel/sintel-2048-surround_512kb.mp4",
+          "thumbnailUrl": "https://placehold.co/640x360/9BB068/FFFFFF/png?text=Phase%201%20-%20Video%202",
           "completionRule": {
             "type": "percent_played",
             "useConfig": true
@@ -158,8 +158,8 @@
           "title": "Inner Shields: What Protects You?",
           "description": "The everyday things that help protect your wellbeing.",
           "duration": 84,
-          "mediaUrl": null,
-          "thumbnailUrl": null,
+          "mediaUrl": "https://archive.org/download/BigBuckBunny_328/BigBuckBunny_512kb.mp4",
+          "thumbnailUrl": "https://placehold.co/640x360/9BB068/FFFFFF/png?text=Phase%201%20-%20Video%203",
           "completionRule": {
             "type": "percent_played",
             "useConfig": true
@@ -385,8 +385,8 @@
           "title": "Your Body Sends the First Signal",
           "description": "How stress shows up physically, and why it's worth noticing.",
           "duration": 70,
-          "mediaUrl": null,
-          "thumbnailUrl": null,
+          "mediaUrl": "https://archive.org/download/Sintel/sintel-2048-surround_512kb.mp4",
+          "thumbnailUrl": "https://placehold.co/640x360/ED7E1C/FFFFFF/png?text=Phase%202%20-%20Video%201",
           "completionRule": {
             "type": "percent_played",
             "useConfig": true
@@ -397,8 +397,8 @@
           "title": "Mental Health Doesn't Always Scream",
           "description": "The quiet signs that are easy to miss.",
           "duration": 78,
-          "mediaUrl": null,
-          "thumbnailUrl": null,
+          "mediaUrl": "https://archive.org/download/BigBuckBunny_328/BigBuckBunny_512kb.mp4",
+          "thumbnailUrl": "https://placehold.co/640x360/ED7E1C/FFFFFF/png?text=Phase%202%20-%20Video%202",
           "completionRule": {
             "type": "percent_played",
             "useConfig": true
@@ -409,8 +409,8 @@
           "title": "The Myth of \"I'll Handle It Alone\"",
           "description": "Why going it alone often makes things harder.",
           "duration": 88,
-          "mediaUrl": null,
-          "thumbnailUrl": null,
+          "mediaUrl": "https://archive.org/download/ElephantsDream/ed_1024_512kb.mp4",
+          "thumbnailUrl": "https://placehold.co/640x360/ED7E1C/FFFFFF/png?text=Phase%202%20-%20Video%203",
           "completionRule": {
             "type": "percent_played",
             "useConfig": true
@@ -642,8 +642,8 @@
           "title": "Why We Don't Speak Up",
           "description": "The reasons we stay quiet, and why they make sense.",
           "duration": 74,
-          "mediaUrl": null,
-          "thumbnailUrl": null,
+          "mediaUrl": "https://archive.org/download/BigBuckBunny_328/BigBuckBunny_512kb.mp4",
+          "thumbnailUrl": "https://placehold.co/640x360/A694F5/FFFFFF/png?text=Phase%203%20-%20Video%201",
           "completionRule": {
             "type": "percent_played",
             "useConfig": true
@@ -654,8 +654,8 @@
           "title": "The Masks We Wear",
           "description": "What emotional masking looks like day to day.",
           "duration": 69,
-          "mediaUrl": null,
-          "thumbnailUrl": null,
+          "mediaUrl": "https://archive.org/download/ElephantsDream/ed_1024_512kb.mp4",
+          "thumbnailUrl": "https://placehold.co/640x360/A694F5/FFFFFF/png?text=Phase%203%20-%20Video%202",
           "completionRule": {
             "type": "percent_played",
             "useConfig": true
@@ -666,8 +666,8 @@
           "title": "Asking for Help Isn't a Burden",
           "description": "Reframing what it means to reach out.",
           "duration": 81,
-          "mediaUrl": null,
-          "thumbnailUrl": null,
+          "mediaUrl": "https://archive.org/download/Sintel/sintel-2048-surround_512kb.mp4",
+          "thumbnailUrl": "https://placehold.co/640x360/A694F5/FFFFFF/png?text=Phase%203%20-%20Video%203",
           "completionRule": {
             "type": "percent_played",
             "useConfig": true
@@ -916,8 +916,8 @@
           "title": "Not All Struggles Are Loud",
           "description": "Spotting signs that someone may be having a hard time.",
           "duration": 76,
-          "mediaUrl": null,
-          "thumbnailUrl": null,
+          "mediaUrl": "https://archive.org/download/ElephantsDream/ed_1024_512kb.mp4",
+          "thumbnailUrl": "https://placehold.co/640x360/D64938/FFFFFF/png?text=Phase%204%20-%20Video%201",
           "completionRule": {
             "type": "percent_played",
             "useConfig": true
@@ -928,8 +928,8 @@
           "title": "Checking In Doesn't Need a Script",
           "description": "Simple ways to start a caring conversation.",
           "duration": 83,
-          "mediaUrl": null,
-          "thumbnailUrl": null,
+          "mediaUrl": "https://archive.org/download/Sintel/sintel-2048-surround_512kb.mp4",
+          "thumbnailUrl": "https://placehold.co/640x360/D64938/FFFFFF/png?text=Phase%204%20-%20Video%202",
           "completionRule": {
             "type": "percent_played",
             "useConfig": true
@@ -940,8 +940,8 @@
           "title": "You're a Bridge, Not a Therapist",
           "description": "Your role, your limits, and where to point people.",
           "duration": 90,
-          "mediaUrl": null,
-          "thumbnailUrl": null,
+          "mediaUrl": "https://archive.org/download/BigBuckBunny_328/BigBuckBunny_512kb.mp4",
+          "thumbnailUrl": "https://placehold.co/640x360/D64938/FFFFFF/png?text=Phase%204%20-%20Video%203",
           "completionRule": {
             "type": "percent_played",
             "useConfig": true
