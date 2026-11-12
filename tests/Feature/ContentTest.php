@@ -99,4 +99,50 @@ class ContentTest extends ApiTestCase
         $this->getJson('/v1/programs/mhfa')->assertOk()
             ->assertJsonPath('phases.0.videos.0.is_video_watched', true);
     }
+
+    public function test_program_activity_carries_draft_completed_and_saved_answers(): void
+    {
+        $user = $this->signIn();
+
+        $first = $this->getJson('/v1/programs/mhfa')->assertOk()
+            ->assertJsonPath('phases.0.activity.is_draft', false)
+            ->assertJsonPath('phases.0.activity.is_completed', false)
+            ->assertJsonPath('phases.0.activity.prompts.0.answer', null);
+        $keys = array_keys($first->json('phases.0.activity'));
+        $at = array_search('instructions', $keys, true);
+        $this->assertSame(['is_draft', 'is_completed'], array_slice($keys, $at + 1, 2));
+        $etag = $first->headers->get('ETag');
+
+        // Draft
+        $this->postJson('/v1/me/programs/mhfa/activities/p1a', [
+            'answers' => ['q1' => ['chips' => ['calm'], 'text' => 'Felt okay']], 'complete' => false,
+        ])->assertOk();
+
+        $this->get('/v1/programs/mhfa', ['If-None-Match' => $etag, 'Accept' => 'application/json'])->assertOk();
+        $draft = $this->getJson('/v1/programs/mhfa')->assertOk()
+            ->assertJsonPath('phases.0.activity.is_draft', true)
+            ->assertJsonPath('phases.0.activity.is_completed', false)
+            ->assertJsonPath('phases.0.activity.prompts.0.answer', ['text' => 'Felt okay', 'chips' => ['calm']])
+            ->assertJsonPath('phases.0.activity.prompts.1.answer', null);
+        $draftEtag = $draft->headers->get('ETag');
+
+        // Submit (answers changed)
+        $this->postJson('/v1/me/programs/mhfa/activities/p1a', [
+            'answers' => ['q1' => ['chips' => ['calm']], 'q2' => ['text' => 'Rested']], 'complete' => true,
+        ])->assertOk();
+
+        $done = $this->getJson('/v1/programs/mhfa')->assertOk()
+            ->assertJsonPath('phases.0.activity.is_draft', false)
+            ->assertJsonPath('phases.0.activity.is_completed', true)
+            ->assertJsonPath('phases.0.activity.prompts.0.answer', ['text' => '', 'chips' => ['calm']])
+            ->assertJsonPath('phases.0.activity.prompts.1.answer', ['text' => 'Rested', 'chips' => []]);
+        $this->assertNotSame($draftEtag, $done->headers->get('ETag'));
+
+        // Another user never sees these answers.
+        $this->signIn();
+        $this->getJson('/v1/programs/mhfa')->assertOk()
+            ->assertJsonPath('phases.0.activity.is_completed', false)
+            ->assertJsonPath('phases.0.activity.prompts.0.answer', null)
+            ->assertJsonPath('phases.0.activity.prompts.1.answer', null);
+    }
 }

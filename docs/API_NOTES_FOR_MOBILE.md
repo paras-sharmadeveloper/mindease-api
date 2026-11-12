@@ -73,7 +73,7 @@ Live docs (local): `http://localhost:8000/docs/api` · OpenAPI JSON: `/docs/api.
 - **The server now has the real content** (the app's `assets/content/*.json`), not the "SAMPLE / Placeholder" files. It goes live when the server runs `php artisan mindease:import-content`.
 - **Videos (sample for now):** every video now has a **sample** `mediaUrl` (public MP4 test films from archive.org, 10+ minutes each) and a placeholder `thumbnailUrl` (PNG, 640×360, in the phase colour), so the real player and thumbnails can be built and tested. `app_config.previewVideosWithoutMedia` is now `false`. The video `duration` in the content (65–90 s) is still what counts for completion, so the video completes at 90% of that, not of the sample film's length. When the client delivers the 12 real videos, only the URLs change; the shape stays the same. Handle a `null` `mediaUrl` anyway (show the preview player).
 
-### Lesson read and video watched status in a program (`GET /programs/{programId}`)
+### User status in a program: lessons, videos, activity (`GET /programs/{programId}`)
 
 **New:** every lesson now has `is_read` (`true` / `false`) right after `intro`, for the signed-in user. It becomes `true` after `POST /me/programs/{programId}/lessons/{lessonId}/read`. The ETag is now per user and changes when a lesson is read, so a cached copy is refreshed (no stale `304`). Everything else in the response is unchanged.
 
@@ -86,6 +86,30 @@ Live docs (local): `http://localhost:8000/docs/api` · OpenAPI JSON: `/docs/api.
 ```json
 { "id": "p1v1", "title": "…", "duration": 70, "mediaUrl": null, "thumbnailUrl": null, "is_video_watched": true }
 ```
+
+**New:** the activity (`phases[].activity`) now has `is_draft` and `is_completed` right after `instructions`, and every prompt has `answer` as its last field. These are set by `POST /me/programs/{programId}/activities/{activityId}`.
+
+| State | `is_draft` | `is_completed` |
+|---|---|---|
+| Never saved | `false` | `false` |
+| Saved with `complete: false` (not submitted) | `true` | `false` |
+| Submitted (`complete: true`); stays like this | `false` | `true` |
+
+`answer` is the user's saved answer for that prompt, `{ "text": "…", "chips": ["…"] }` (draft or submitted; `text` is `""` and `chips` is `[]` when not given), or `null` if the user hasn't answered that prompt. When the user reopens the activity, fill the screen from these. When saving again, send **all** answers (each save replaces the saved ones).
+
+```json
+"activity": {
+  "id": "p2a", "title": "…", "purpose": "…", "instructions": "…",
+  "is_draft": false, "is_completed": true,
+  "prompts": [
+    { "id": "q1", "q": "Where did you feel it in your body?", "chips": ["Head", "Jaw", "…"], "optional": true, "responseType": "chips_and_text",
+      "answer": { "text": "Before meetings", "chips": ["Head", "Jaw"] } },
+    { "id": "q2", "q": "…", "optional": true, "responseType": "text", "answer": null }
+  ]
+}
+```
+
+The answers are private (each user only gets their own). Don't log this response or send it to analytics.
 
 ### Question types in a program (`GET /programs/{programId}`)
 

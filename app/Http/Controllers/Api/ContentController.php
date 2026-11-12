@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
+use App\Models\ActivityResponse;
 use App\Models\LessonRead;
 use App\Models\Program;
 use App\Models\VideoProgress;
@@ -70,11 +71,20 @@ class ContentController extends Controller
     /**
      * Get a program.
      *
-     * The full program: phases, lessons, videos, activity and quiz. Same shape as `mhfa_program.json`, plus
-     * per-user status: `is_read` (true/false) on every lesson, right after `intro`, set by
-     * `POST /me/programs/{programId}/lessons/{lessonId}/read`; and `is_video_watched` (true/false) on every
-     * video, true once the video is complete through `POST /me/programs/{programId}/videos/{videoId}/progress`
-     * (90% of its seconds played). The ETag is per user, so it changes when either status changes.
+     * The full program: phases, lessons, videos, activity and quiz. Same shape as `mhfa_program.json`, plus the
+     * signed-in user's status:
+     *
+     * - **Lessons:** `is_read` (true/false), right after `intro`. Set by `POST /me/programs/{programId}/lessons/{lessonId}/read`.
+     * - **Videos:** `is_video_watched` (true/false), last field. True once the video is complete through
+     *   `POST /me/programs/{programId}/videos/{videoId}/progress` (90% of its seconds played).
+     * - **Activity:** `is_draft` and `is_completed` (true/false), right after `instructions`. Both `false` = never
+     *   saved; `is_draft: true` = saved with `complete: false` and not submitted yet; `is_completed: true` = submitted
+     *   (stays true; `is_draft` is then false). Set by `POST /me/programs/{programId}/activities/{activityId}`.
+     * - **Activity prompts:** `answer`, last field: the user's saved answer `{ text, chips }` for that prompt
+     *   (draft or submitted), or `null` if they haven't answered it. Use it to fill the activity screen again.
+     *
+     * The answers are private: only the signed-in user gets their own. The ETag is per user and changes whenever
+     * any of this changes.
      */
     #[Group('Programs', 'Program content (phases, lessons, videos, activity, quiz). Cacheable with ETag / If-None-Match.', weight: 4)]
     public function program(Request $request, string $programId): Response
@@ -95,20 +105,31 @@ class ContentController extends Controller
             ->pluck('video_id')
             ->all();
 
-        $json = $this->withUserStatus($program->body, array_flip($readIds), array_flip($watchedIds));
-        $etag = '"'.sha1($program->etag.'|'.implode(',', $readIds).'|'.implode(',', $watchedIds)).'"';
+        $activities = ActivityResponse::where('user_id', $userId)
+            ->where('program_id', $program->id)
+            ->orderBy('phase_id')
+            ->get()
+            ->keyBy('activity_id');
+
+        $json = $this->withUserStatus($program->body, array_flip($readIds), array_flip($watchedIds), $activities->all());
+
+        // Hash of the per-user parts (answers included, so two saves in the same second still change it).
+        $activityState = $activities->map(fn (ActivityResponse $a) => [
+            $a->activity_id, $a->completed_at?->getTimestamp(), $a->answers,
+        ])->values();
+        $etag = '"'.sha1($program->etag.'|'.implode(',', $readIds).'|'.implode(',', $watchedIds).'|'.json_encode($activityState)).'"';
 
         return ContentResponse::make($request, $json, $etag, $program->content_version);
     }
 
     /**
-     * Adds `is_read` to every lesson (right after `intro`) and `is_video_watched` to every video (at the end).
-     * Decodes as objects so `{}` stays `{}`.
+     * Adds the user's status to the program JSON (see program()). Decodes as objects so `{}` stays `{}`.
      *
      * @param  array<string, int>  $readIds  lesson ids the user has read (as keys)
      * @param  array<string, int>  $watchedIds  video ids the user has completed (as keys)
+     * @param  array<string, ActivityResponse>  $activities  saved activities, keyed by activity id
      */
-    private function withUserStatus(string $body, array $readIds, array $watchedIds): string
+    private function withUserStatus(string $body, array $readIds, array $watchedIds, array $activities): string
     {
         $data = json_decode($body);
         if (! is_object($data) || ! is_array($data->phases ?? null)) {
@@ -119,50 +140,78 @@ class ContentController extends Controller
             if (! is_object($phase)) {
                 continue;
             }
-            if (is_array($phase->lessons ?? null)) {
-                $phase->lessons = $this->flagItems($phase->lessons, 'is_read', $readIds, after: 'intro');
+            foreach (is_array($phase->lessons ?? null) ? $phase->lessons : [] as $i => $lesson) {
+                if (is_object($lesson)) {
+                    $phase->lessons[$i] = $this->withKeys($lesson, ['is_read' => isset($readIds[$lesson->id ?? ''])], after: 'intro');
+                }
             }
-            if (is_array($phase->videos ?? null)) {
-                $phase->videos = $this->flagItems($phase->videos, 'is_video_watched', $watchedIds);
+            foreach (is_array($phase->videos ?? null) ? $phase->videos : [] as $i => $video) {
+                if (is_object($video)) {
+                    $phase->videos[$i] = $this->withKeys($video, ['is_video_watched' => isset($watchedIds[$video->id ?? ''])]);
+                }
+            }
+            if (is_object($phase->activity ?? null)) {
+                $phase->activity = $this->withActivityStatus($phase->activity, $activities[$phase->activity->id ?? ''] ?? null);
             }
         }
 
         return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
     }
 
-    /**
-     * Sets `$flag` on each item (true when its id is in `$ids`), placed right after `$after`, or last.
-     *
-     * @param  array<int, mixed>  $items
-     * @param  array<string, int>  $ids
-     * @return array<int, mixed>
-     */
-    private function flagItems(array $items, string $flag, array $ids, ?string $after = null): array
+    /** `is_draft` / `is_completed` after `instructions`, and each prompt's saved `answer` (or null). */
+    private function withActivityStatus(object $activity, ?ActivityResponse $saved): object
     {
-        foreach ($items as $i => $item) {
-            if (! is_object($item)) {
-                continue;
-            }
-            $value = isset($item->id) && isset($ids[$item->id]);
-            $out = new \stdClass;
-            $placed = false;
-            foreach (get_object_vars($item) as $key => $v) {
-                if ($key === $flag) {
+        $completed = $saved?->completed_at !== null;
+        $answers = $saved?->answers ?? new \stdClass;
+
+        if (is_array($activity->prompts ?? null)) {
+            foreach ($activity->prompts as $i => $prompt) {
+                if (! is_object($prompt)) {
                     continue;
                 }
-                $out->{$key} = $v;
-                if ($key === $after) {
-                    $out->{$flag} = $value;
-                    $placed = true;
-                }
+                $answer = $answers->{$prompt->id ?? ''} ?? null;
+                $activity->prompts[$i] = $this->withKeys($prompt, ['answer' => is_object($answer) ? [
+                    'text' => (string) ($answer->text ?? ''),
+                    'chips' => array_values((array) ($answer->chips ?? [])),
+                ] : null]);
             }
-            if (! $placed) {
-                $out->{$flag} = $value;
-            }
-            $items[$i] = $out;
         }
 
-        return $items;
+        return $this->withKeys($activity, [
+            'is_draft' => $saved !== null && ! $completed,
+            'is_completed' => $completed,
+        ], after: 'instructions');
+    }
+
+    /**
+     * Returns a copy of `$item` with `$values` placed right after the key `$after` (or last when it isn't there).
+     * Keys that already exist in `$item` with these names are replaced.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    private function withKeys(object $item, array $values, ?string $after = null): object
+    {
+        $out = new \stdClass;
+        $placed = false;
+        foreach (get_object_vars($item) as $key => $v) {
+            if (array_key_exists($key, $values)) {
+                continue;
+            }
+            $out->{$key} = $v;
+            if ($key === $after) {
+                foreach ($values as $k => $value) {
+                    $out->{$k} = $value;
+                }
+                $placed = true;
+            }
+        }
+        if (! $placed) {
+            foreach ($values as $k => $value) {
+                $out->{$k} = $value;
+            }
+        }
+
+        return $out;
     }
 
     /**

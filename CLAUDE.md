@@ -52,7 +52,7 @@ Owner: Paras (ThunderClap). Talk to Paras in Hinglish; client-facing text in for
 - Video: OR-merge the watched map, never clear bits; duration comes from content.
 - Quiz is re-scored server-side: `round(correct/total*100) >= threshold`. Every attempt stored.
 - Activity complete needs ≥1 non-empty answer; once complete it stays complete.
-- **Sensitive data:** `assessments.answers`, `activity_responses.answers`, `idempotency_keys.response_body` are encrypted at rest. Never log them, never send them to analytics, only return them to their owner. Don't add request-body logging.
+- **Sensitive data:** `assessments.answers`, `activity_responses.answers`, `idempotency_keys.response_body` are encrypted at rest. Never log them, never send them to analytics, only return them to their owner. `GET /programs/{programId}` now includes the user's own activity answers (`prompts[].answer`), so keep it `Cache-Control: private` and per-user. Don't add request-body logging.
 - Content ids are stable forever (progress is keyed by them). The importer refuses to drop ids that have progress unless `--force`.
 - Every user table has `cascadeOnDelete` on `user_id`. New user tables must too (DELETE /me, Apple 5.1.1(v)).
 - Host in an AU region.
