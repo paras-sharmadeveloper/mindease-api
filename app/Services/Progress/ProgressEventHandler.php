@@ -231,15 +231,34 @@ class ProgressEventHandler
             ?? throw ApiException::unknown('phaseId', 'quiz');
 
         $questions = $quiz['questions'] ?? [];
-        $answers = array_values(array_map('intval', $event['answers']));
 
-        if (count($answers) !== count($questions)) {
-            throw new ApiException('quiz_incomplete', 'Please answer every question before submitting.', 422, 'answers');
+        // Two forms: keyed by question id { "p1q-1": 1, … } (preferred), or a list in question order [1, 0, …].
+        $keyed = ! array_is_list($event['answers']);
+        if ($keyed) {
+            $ids = array_column($questions, 'id');
+            foreach (array_keys($event['answers']) as $key) {
+                if (! in_array((string) $key, $ids, true)) {
+                    throw new ApiException('unknown_question', 'That question isn\'t part of this quiz.', 422, "answers.{$key}");
+                }
+            }
+            $answers = [];
+            foreach ($questions as $question) {
+                if (! array_key_exists($question['id'] ?? '', $event['answers'])) {
+                    throw new ApiException('quiz_incomplete', 'Please answer every question before submitting.', 422, 'answers.'.($question['id'] ?? ''));
+                }
+                $answers[] = (int) $event['answers'][$question['id']];
+            }
+        } else {
+            $answers = array_values(array_map('intval', $event['answers']));
+            if (count($answers) !== count($questions)) {
+                throw new ApiException('quiz_incomplete', 'Please answer every question before submitting.', 422, 'answers');
+            }
         }
 
         foreach ($questions as $i => $question) {
             if ($answers[$i] >= count($question['options'] ?? [])) {
-                throw new ApiException('invalid_answer', 'One of the answers isn\'t a valid option.', 422, "answers.{$i}");
+                $field = $keyed ? 'answers.'.$question['id'] : "answers.{$i}";
+                throw new ApiException('invalid_answer', 'One of the answers isn\'t a valid option.', 422, $field);
             }
         }
 

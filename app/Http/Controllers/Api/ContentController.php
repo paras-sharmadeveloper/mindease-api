@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityResponse;
 use App\Models\LessonRead;
 use App\Models\Program;
+use App\Models\QuizAttempt;
 use App\Models\VideoProgress;
 use App\Services\ContentRepository;
 use App\Support\ContentResponse;
@@ -82,6 +83,10 @@ class ContentController extends Controller
      *   (stays true; `is_draft` is then false). Set by `POST /me/programs/{programId}/activities/{activityId}`.
      * - **Activity prompts:** `answer`, last field: the user's saved answer `{ text, chips }` for that prompt
      *   (draft or submitted), or `null` if they haven't answered it. Use it to fill the activity screen again.
+     * - **Quiz:** `is_completed` (submitted at least once) and `is_passed` (passed at least once: this is what
+     *   counts for the phase), right after the quiz `id`. Set by `POST /me/programs/{programId}/quizzes/{quizId}/submit`.
+     * - **Quiz questions:** `user_answer`, last field: the 0-based option index the user picked in their latest
+     *   attempt, or `null` before the first submit. (`answer` is the correct option, as before.)
      *
      * The answers are private: only the signed-in user gets their own. The ETag is per user and changes whenever
      * any of this changes.
@@ -111,13 +116,23 @@ class ContentController extends Controller
             ->get()
             ->keyBy('activity_id');
 
-        $json = $this->withUserStatus($program->body, array_flip($readIds), array_flip($watchedIds), $activities->all());
+        // Per quiz: latest attempt + whether any attempt passed.
+        $quizzes = [];
+        foreach (QuizAttempt::where('user_id', $userId)->where('program_id', $program->id)->orderBy('id')->get() as $attempt) {
+            $quizzes[$attempt->quiz_id] = [
+                'latest' => $attempt,
+                'passed' => ($quizzes[$attempt->quiz_id]['passed'] ?? false) || $attempt->passed,
+            ];
+        }
+
+        $json = $this->withUserStatus($program->body, array_flip($readIds), array_flip($watchedIds), $activities->all(), $quizzes);
 
         // Hash of the per-user parts (answers included, so two saves in the same second still change it).
         $activityState = $activities->map(fn (ActivityResponse $a) => [
             $a->activity_id, $a->completed_at?->getTimestamp(), $a->answers,
         ])->values();
-        $etag = '"'.sha1($program->etag.'|'.implode(',', $readIds).'|'.implode(',', $watchedIds).'|'.json_encode($activityState)).'"';
+        $quizState = array_map(fn ($q) => [$q['latest']->id, $q['passed']], $quizzes);
+        $etag = '"'.sha1($program->etag.'|'.implode(',', $readIds).'|'.implode(',', $watchedIds).'|'.json_encode($activityState).'|'.json_encode($quizState)).'"';
 
         return ContentResponse::make($request, $json, $etag, $program->content_version);
     }
@@ -128,8 +143,9 @@ class ContentController extends Controller
      * @param  array<string, int>  $readIds  lesson ids the user has read (as keys)
      * @param  array<string, int>  $watchedIds  video ids the user has completed (as keys)
      * @param  array<string, ActivityResponse>  $activities  saved activities, keyed by activity id
+     * @param  array<string, array{latest: QuizAttempt, passed: bool}>  $quizzes  keyed by quiz id
      */
-    private function withUserStatus(string $body, array $readIds, array $watchedIds, array $activities): string
+    private function withUserStatus(string $body, array $readIds, array $watchedIds, array $activities, array $quizzes): string
     {
         $data = json_decode($body);
         if (! is_object($data) || ! is_array($data->phases ?? null)) {
@@ -152,6 +168,9 @@ class ContentController extends Controller
             }
             if (is_object($phase->activity ?? null)) {
                 $phase->activity = $this->withActivityStatus($phase->activity, $activities[$phase->activity->id ?? ''] ?? null);
+            }
+            if (is_object($phase->quiz ?? null)) {
+                $phase->quiz = $this->withQuizStatus($phase->quiz, $quizzes[$phase->quiz->id ?? ''] ?? null);
             }
         }
 
@@ -181,6 +200,32 @@ class ContentController extends Controller
             'is_draft' => $saved !== null && ! $completed,
             'is_completed' => $completed,
         ], after: 'instructions');
+    }
+
+    /**
+     * `is_completed` / `is_passed` after the quiz `id`, and each question's `user_answer` from the latest attempt.
+     * Attempts store the chosen option per question in question order.
+     *
+     * @param  array{latest: QuizAttempt, passed: bool}|null  $state
+     */
+    private function withQuizStatus(object $quiz, ?array $state): object
+    {
+        $chosen = $state ? array_values((array) $state['latest']->answers) : [];
+
+        if (is_array($quiz->questions ?? null)) {
+            foreach ($quiz->questions as $i => $question) {
+                if (is_object($question)) {
+                    $quiz->questions[$i] = $this->withKeys($question, [
+                        'user_answer' => array_key_exists($i, $chosen) ? (int) $chosen[$i] : null,
+                    ]);
+                }
+            }
+        }
+
+        return $this->withKeys($quiz, [
+            'is_completed' => $state !== null,
+            'is_passed' => $state['passed'] ?? false,
+        ], after: 'id');
     }
 
     /**

@@ -111,6 +111,25 @@ Live docs (local): `http://localhost:8000/docs/api` · OpenAPI JSON: `/docs/api.
 
 The answers are private (each user only gets their own). Don't log this response or send it to analytics.
 
+**New:** the quiz (`phases[].quiz`) now has `is_completed` and `is_passed` right after its `id`, and every question has `user_answer` as its last field. These are set by `POST /me/programs/{programId}/quizzes/{quizId}/submit`.
+
+| State | `is_completed` | `is_passed` |
+|---|---|---|
+| Never submitted | `false` | `false` |
+| Submitted, never passed | `true` | `false` |
+| Passed at least once (counts for the phase; stays true even after a failed retake) | `true` | `true` |
+
+`user_answer` is the 0-based option index the user picked **in their latest attempt**, or `null` before the first submit. `answer` is still the correct option, so the app can show "your answer" against "correct answer" with `explain`.
+
+```json
+"quiz": {
+  "id": "p1q", "is_completed": true, "is_passed": true, "title": "Phase 1 quiz", "passThreshold": null,
+  "questions": [
+    { "id": "p1q-1", "type": "mc", "q": "…", "options": ["…", "…", "…", "…"], "answer": 1, "explain": "…", "user_answer": 1 }
+  ]
+}
+```
+
 ### Question types in a program (`GET /programs/{programId}`)
 
 **Activity prompts** (`phases[].activity.prompts[]`) are free-text reflection questions, all optional. `responseType` says what to show:
@@ -187,12 +206,12 @@ These are easier than the generic `/events` endpoint. They need **no `Idempotenc
 | `markLessonAsRead(lessonId)` | `POST /me/programs/{programId}/lessons/{lessonId}/read` | none |
 | `videoWatched(videoId)` | `POST /me/programs/{programId}/videos/{videoId}/progress` | `{ "position": 41.5, "watched": "1111100…" }` |
 | `submitActivity(activityId)` | `POST /me/programs/{programId}/activities/{activityId}` | `{ "answers": { "q1": { "text": "…", "chips": ["Head"] } }, "complete": true }` |
-| `submitQuiz(quizId)` | `POST /me/programs/{programId}/quizzes/{quizId}/submit` | `{ "answers": [1, 0, 2, 0, 1] }` |
+| `submitQuiz(quizId)` | `POST /me/programs/{programId}/quizzes/{quizId}/submit` | `{ "answers": { "p1q-1": 1, "p1q-2": 0, "p1q-3": 2, "p1q-4": 0, "p1q-5": 1 } }` |
 
 - `programId` is `mhfa`. Item ids come from `GET /programs/mhfa`, for example lesson `p1l1`, video `p1v1`, activity `p1a`, quiz `p1q`.
 - **Video:** `position` is the seconds into the video (used to resume). `watched` has one character per second of the video, `"1"` if that second was played. Send it every ~10 seconds and when the player closes. The video completes at 90% played; seeking ahead doesn't count.
 - **Activity:** `complete: false` saves a draft. `true` submits it and needs at least one answer (`422 activity_empty`).
-- **Quiz:** one 0-based option index per question, in order, and every question answered. The result is the last item of `progress.phases.<phaseId>.quiz.attempts` (`correct`, `total`, `score`, `passed`). The pass mark is 80%.
+- **Quiz (changed):** send `answers` as an object: **key = question id** (`phases[].quiz.questions[].id`), **value = the 0-based index of the chosen option** in that question's `options` (for `tf`: True = `0`, False = `1`). Every question must be answered; key order doesn't matter. The old list form (`[1, 0, 2, 0, 1]`, in question order) still works. New errors: `422 unknown_question` (a key isn't a question of this quiz); `quiz_incomplete` and `invalid_answer` now name the question in `field` (`answers.p1q-3`). The result is the last item of `progress.phases.<phaseId>.quiz.attempts` (`correct`, `total`, `score`, `passed`). The pass mark is 80%.
 - Unknown item id → `404 unknown_lesson` / `unknown_video` / `unknown_activity` / `unknown_quiz`.
 
 ## Progress events (generic endpoint, still supported)
@@ -202,9 +221,9 @@ These are easier than the generic `/events` endpoint. They need **no `Idempotenc
   - Same key with a different body → `422 idempotency_key_reused`.
   - Same key while the first is in flight → `409 idempotency_in_progress` (retry).
 - `video_progress.watched`: send the full local map (`"1"` per played second). The server OR-merges it, so partial maps are fine too. The map is sized by the content's `duration`.
-- `quiz_submit.answers`: one 0-based option index per question, in question order. All questions must be answered.
+- `quiz_submit.answers`: an object keyed by question id with the 0-based option index (preferred), or a list in question order. All questions must be answered.
 - `activity_save.answers` keys must be prompt ids of that phase's activity.
-- Error codes here: `phase_locked` 403, `unknown_phase|lesson|video` 422, `unknown_prompt` 422, `activity_empty` 422, `quiz_incomplete` 422, `invalid_answer` 422.
+- Error codes here: `phase_locked` 403, `unknown_phase|lesson|video` 422, `unknown_prompt` 422, `activity_empty` 422, `quiz_incomplete` 422, `unknown_question` 422, `invalid_answer` 422.
 
 ### ⚠ ProgramProgress shape — needs confirming
 

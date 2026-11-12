@@ -146,7 +146,9 @@ class ContentImporter
                 if (empty($quiz['questions'])) {
                     $fail("quiz {$quiz['id']} has no questions");
                 }
-                foreach ($quiz['questions'] as $q) {
+                foreach ($quiz['questions'] as $n => $q) {
+                    // Quiz answers are sent keyed by question id, so every question needs one.
+                    $seen($q['id'] ?? $fail("question #".($n + 1)." in quiz {$quiz['id']} has no id"));
                     $options = $q['options'] ?? [];
                     if (! is_int($q['answer'] ?? null) || $q['answer'] < 0 || $q['answer'] >= count($options)) {
                         $fail("question ".($q['id'] ?? '?')." has an 'answer' index outside its options (0-based)");

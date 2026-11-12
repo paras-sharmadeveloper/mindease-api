@@ -64,4 +64,57 @@ class ProgramActionTest extends ApiTestCase
             ->assertJsonPath('phases.0.completed', true)->assertJsonPath('phases.0.percent', 100)
             ->assertJsonPath('focus.0.unlocked', true);
     }
+
+    public function test_quiz_answers_can_be_keyed_by_question_id(): void
+    {
+        $this->signIn();
+        $url = '/v1/me/programs/mhfa/quizzes/p1q/submit';
+
+        // Order of keys doesn't matter; scored against the right questions.
+        $this->postJson($url, ['answers' => ['p1q-5' => 1, 'p1q-4' => 0, 'p1q-3' => 1, 'p1q-2' => 0, 'p1q-1' => 1]])->assertOk()
+            ->assertJsonPath('progress.phases.p1.quiz.attempts.0.score', 100)
+            ->assertJsonPath('progress.phases.p1.quiz.attempts.0.passed', true)
+            ->assertJsonPath('progress.phases.p1.quiz.attempts.0.answers', [1, 0, 1, 0, 1]);
+
+        $this->postJson($url, ['answers' => ['p1q-1' => 1, 'p1q-2' => 0]])->assertStatus(422)
+            ->assertJsonPath('error.code', 'quiz_incomplete')->assertJsonPath('error.field', 'answers.p1q-3');
+        $this->postJson($url, ['answers' => ['p1q-1' => 1, 'p1q-2' => 0, 'p1q-3' => 1, 'p1q-4' => 0, 'p1q-5' => 1, 'p2q-1' => 0]])->assertStatus(422)
+            ->assertJsonPath('error.code', 'unknown_question')->assertJsonPath('error.field', 'answers.p2q-1');
+        $this->postJson($url, ['answers' => ['p1q-1' => 1, 'p1q-2' => 7, 'p1q-3' => 1, 'p1q-4' => 0, 'p1q-5' => 1]])->assertStatus(422)
+            ->assertJsonPath('error.code', 'invalid_answer')->assertJsonPath('error.field', 'answers.p1q-2');
+        $this->postJson('/v1/me/programs/mhfa/quizzes/nope/submit', ['answers' => ['p1q-1' => 1]])->assertStatus(404)
+            ->assertJsonPath('error.code', 'unknown_quiz');
+    }
+
+    public function test_program_quiz_carries_completed_passed_and_user_answers(): void
+    {
+        $this->signIn();
+
+        $first = $this->getJson('/v1/programs/mhfa')->assertOk()
+            ->assertJsonPath('phases.0.quiz.is_completed', false)
+            ->assertJsonPath('phases.0.quiz.is_passed', false)
+            ->assertJsonPath('phases.0.quiz.questions.0.user_answer', null);
+        $keys = array_keys($first->json('phases.0.quiz'));
+        $this->assertSame(['id', 'is_completed', 'is_passed'], array_slice($keys, 0, 3));
+
+        // Failed attempt: completed, not passed.
+        $this->postJson('/v1/me/programs/mhfa/quizzes/p1q/submit', ['answers' => self::QUIZ_FAIL])->assertOk();
+        $this->getJson('/v1/programs/mhfa')->assertOk()
+            ->assertJsonPath('phases.0.quiz.is_completed', true)
+            ->assertJsonPath('phases.0.quiz.is_passed', false)
+            ->assertJsonPath('phases.0.quiz.questions.3.user_answer', self::QUIZ_FAIL[3]);
+
+        // Pass, then a failed retake: still passed; user_answer shows the latest attempt.
+        $this->postJson('/v1/me/programs/mhfa/quizzes/p1q/submit', ['answers' => self::QUIZ_PASS])->assertOk();
+        $this->postJson('/v1/me/programs/mhfa/quizzes/p1q/submit', ['answers' => self::QUIZ_FAIL])->assertOk();
+        $after = $this->getJson('/v1/programs/mhfa')->assertOk()
+            ->assertJsonPath('phases.0.quiz.is_passed', true)
+            ->assertJsonPath('phases.0.quiz.questions.0.answer', 1);
+        $this->assertSame(self::QUIZ_FAIL, array_column($after->json('phases.0.quiz.questions'), 'user_answer'));
+
+        // Another user starts clean.
+        $this->signIn();
+        $this->getJson('/v1/programs/mhfa')->assertJsonPath('phases.0.quiz.is_completed', false)
+            ->assertJsonPath('phases.0.quiz.questions.0.user_answer', null);
+    }
 }

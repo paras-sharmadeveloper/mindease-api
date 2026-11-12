@@ -136,13 +136,65 @@ class ProgramActionController extends Controller
     /**
      * Submit a quiz.
      *
-     * `{ answers: [1, 0, 2, 0, 1] }`: the 0-based index of the chosen option for every question, in question order.
-     * Scored by the server; the latest attempt (`correct`, `total`, `score`, `passed`) is the last item of
-     * `progress.phases.<phaseId>.quiz.attempts`. Pass mark 80%. Retakes are unlimited.
+     * Sends the user's answers to a phase's quiz. The server scores it and stores every attempt.
+     *
+     * ### Where the ids come from
+     * Both come from `GET /programs/{programId}`:
+     * - `quizId` = `phases[].quiz.id` (one per phase: `p1q`, `p2q`, `p3q`, `p4q`).
+     * - Each key in `answers` = a question id from `phases[].quiz.questions[].id` (`p1q-1`, `p1q-2`, …).
+     *
+     * ### What to send
+     * `answers` is an object: **key = question id, value = the 0-based index of the option the user picked** in
+     * that question's `options`. Every question must be answered.
+     * - `mc` question with options `["A", "B", "C", "D"]`: picking "B" = `1`.
+     * - `tf` question (`options: ["True", "False"]`): True = `0`, False = `1`.
+     *
+     * ```json
+     * { "answers": { "p1q-1": 1, "p1q-2": 0, "p1q-3": 1, "p1q-4": 0, "p1q-5": 1 } }
+     * ```
+     *
+     * The older list form (indexes in question order, `{ "answers": [1, 0, 1, 0, 1] }`) still works.
+     *
+     * ### Scoring
+     * `score = round(correct / total * 100)`; passed when `score >= 80` (or the quiz's `passThreshold`). Retakes
+     * are unlimited; the quiz counts for the phase once any attempt passed.
+     *
+     * ### Response `200`
+     * `{ progress, completion }`.
+     * - The result of this attempt (`answers`, `correct`, `total`, `score`, `passed`) is the last item of
+     *   `progress.phases.<phaseId>.quiz.attempts`.
+     * - `completion` is `null`, unless this submit finished the whole phase: then show the phase completion sheet.
+     * - `GET /programs/{programId}` then shows `is_completed`, `is_passed` and each question's `user_answer`.
+     *
+     * ### Errors
+     * - `401` no or expired access token.
+     * - `403 phase_locked` the phase isn't unlocked yet.
+     * - `404 unknown_quiz` no quiz with this id; `404 program_not_found` wrong `programId`.
+     * - `422 quiz_incomplete` (`field: answers.<questionId>`) a question has no answer.
+     * - `422 unknown_question` (`field: answers.<key>`) a key isn't a question of this quiz.
+     * - `422 invalid_answer` (`field: answers.<questionId>`) the index isn't one of that question's options.
+     * - `422 validation_failed` an answer isn't a whole number of 0 or more.
      */
     public function quiz(Request $request, string $programId, string $quizId): JsonResponse
     {
-        return $this->send($request, $programId, 'quiz', $quizId, ['type' => 'quiz_submit', 'answers' => $request->input('answers')]);
+        $phaseId = $this->phaseOf($programId, 'quiz', $quizId);
+
+        // Top-level rule here so the API docs show the body; ProgressEventHandler re-checks every answer.
+        $data = $request->validate([
+            /**
+             * Object keyed by question id (`phases[].quiz.questions[].id`); each value is the 0-based index of the
+             * chosen option in that question's `options`. Every question must be answered.
+             *
+             * @var array<string, int>
+             *
+             * @example {"p1q-1": 1, "p1q-2": 0, "p1q-3": 1, "p1q-4": 0, "p1q-5": 1}
+             */
+            'answers' => ['required', 'array', 'max:100'],
+        ]);
+
+        return response()->json($this->handler->handle($request->user(), $programId, [
+            'phaseId' => $phaseId, 'type' => 'quiz_submit', 'answers' => $data['answers'],
+        ]));
     }
 
     private function send(Request $request, string $programId, string $kind, string $itemId, array $event): JsonResponse
