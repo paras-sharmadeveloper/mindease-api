@@ -38,6 +38,7 @@ class Booking extends Model
             'hold_expires_at' => 'datetime',
             'confirmed_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'therapist_hidden_at' => 'datetime',
             'price_cents' => 'integer',
             'notes' => 'encrypted',
             'focus' => 'encrypted:array',

@@ -192,6 +192,41 @@ class PanelTest extends ApiTestCase
             ->assertJsonPath('payment.refundedCents', 15000);
     }
 
+    public function test_therapist_deletes_a_cancelled_session_from_their_list_only(): void
+    {
+        $booking = $this->confirmedBooking();
+        $this->signIn($this->therapistUser);
+
+        $this->getJson('/v1/panel/bookings?scope=all')->assertJsonPath('0.canDelete', false);
+        $this->deleteJson("/v1/panel/bookings/{$booking->id}")->assertStatus(409)->assertJsonPath('error.code', 'not_deletable');
+
+        $this->postJson("/v1/panel/bookings/{$booking->id}/cancel")->assertOk()->assertJsonPath('canDelete', true);
+        $this->deleteJson("/v1/panel/bookings/{$booking->id}")->assertNoContent();
+        $this->deleteJson("/v1/panel/bookings/{$booking->id}")->assertNoContent(); // repeat is harmless
+
+        $this->getJson('/v1/panel/bookings?scope=all')->assertOk()->assertJsonCount(0);
+        $this->getJson('/v1/panel/bookings?scope=past')->assertOk()->assertJsonCount(0);
+
+        // The booking and its refund are kept: the admin and the client still see it.
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'cancelled']);
+        $this->signIn($this->admin);
+        $this->getJson('/v1/panel/bookings?scope=all')->assertOk()->assertJsonCount(1)->assertJsonPath('0.canDelete', false);
+        $this->deleteJson("/v1/panel/bookings/{$booking->id}")->assertStatus(403);
+        $this->signIn($booking->user);
+        $this->getJson("/v1/me/bookings/{$booking->id}")->assertOk()->assertJsonPath('status', 'cancelled');
+    }
+
+    public function test_therapist_cannot_delete_another_therapists_session(): void
+    {
+        $other = Therapist::create(['user_id' => User::factory()->create()->id, 'specialties' => []]);
+        $theirs = $this->confirmedBooking(therapist: $other);
+        $theirs->forceFill(['status' => Booking::CANCELLED, 'cancelled_at' => now()])->save();
+
+        $this->signIn($this->therapistUser);
+        $this->deleteJson("/v1/panel/bookings/{$theirs->id}")->assertNotFound();
+        $this->assertNull($theirs->fresh()->therapist_hidden_at);
+    }
+
     public function test_outcome_only_after_start(): void
     {
         $booking = $this->confirmedBooking();

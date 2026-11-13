@@ -120,8 +120,9 @@ sudo -u "$DEPLOY_USER" bash -c "cd '$APP_DIR' && composer install --no-dev --opt
 if ! grep -q '^APP_KEY=base64' "$APP_DIR/.env"; then
   sudo -u "$DEPLOY_USER" php "$APP_DIR/artisan" key:generate --force
 fi
-setfacl -R -m u:www-data:rwX -m u:"$DEPLOY_USER":rwX "$APP_DIR/storage" "$APP_DIR/bootstrap/cache"
-setfacl -dR -m u:www-data:rwX -m u:"$DEPLOY_USER":rwX "$APP_DIR/storage" "$APP_DIR/bootstrap/cache"
+mkdir -p "$APP_DIR/public/profile_pics"
+setfacl -R -m u:www-data:rwX -m u:"$DEPLOY_USER":rwX "$APP_DIR/storage" "$APP_DIR/bootstrap/cache" "$APP_DIR/public/profile_pics"
+setfacl -dR -m u:www-data:rwX -m u:"$DEPLOY_USER":rwX "$APP_DIR/storage" "$APP_DIR/bootstrap/cache" "$APP_DIR/public/profile_pics"
 sudo -u "$DEPLOY_USER" bash "$APP_DIR/deploy/deploy.sh" --no-pull
 sudo -u "$DEPLOY_USER" php "$APP_DIR/artisan" mindease:import-content
 

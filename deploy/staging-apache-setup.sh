@@ -140,8 +140,9 @@ COMPOSER_ALLOW_SUPERUSER=1 $PHP /usr/local/bin/composer84 install --no-dev --opt
 grep -q '^APP_KEY=base64' .env || $PHP artisan key:generate --force
 chown -R root:www-data "$APP_DIR"
 chmod 640 .env
-setfacl -R -m u:www-data:rwX storage bootstrap/cache
-setfacl -dR -m u:www-data:rwX storage bootstrap/cache
+mkdir -p public/profile_pics
+setfacl -R -m u:www-data:rwX storage bootstrap/cache public/profile_pics
+setfacl -dR -m u:www-data:rwX storage bootstrap/cache public/profile_pics
 $PHP artisan migrate --force
 $PHP artisan mindease:import-content
 $PHP artisan optimize

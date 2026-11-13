@@ -94,6 +94,7 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'role:admin,therapist'])->pre
     Route::get('bookings', [Panel\BookingController::class, 'index']);
     Route::get('bookings/{bookingId}', [Panel\BookingController::class, 'show']);
     Route::post('bookings/{bookingId}/cancel', [Panel\BookingController::class, 'cancel']);
+    Route::delete('bookings/{bookingId}', [Panel\BookingController::class, 'destroy']);
     Route::post('bookings/{bookingId}/outcome', [Panel\BookingController::class, 'outcome']);
     Route::post('bookings/{bookingId}/video-token', [Panel\BookingController::class, 'videoToken']);
 

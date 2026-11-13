@@ -10,6 +10,7 @@ use App\Services\Video\ZoomVideoToken;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 
 #[Group('Sessions', 'Booked sessions: list, cancel, mark the outcome and join the call.', weight: 6)]
@@ -19,7 +20,7 @@ class BookingController extends PanelController
      * List sessions.
      *
      * `?scope=upcoming|past|all` (default upcoming), `&therapistId=` (admin filter), `&from=&to=` (ISO, on startsAt).
-     * Therapists only ever see their own bookings. Unpaid holds are hidden.
+     * Therapists only ever see their own bookings, minus cancelled ones they deleted. Unpaid holds are hidden.
      */
     public function index(Request $request, PanelPresenter $presenter): JsonResponse
     {
@@ -36,7 +37,7 @@ class BookingController extends PanelController
         if ($user->isAdmin()) {
             $query->when($input['therapistId'] ?? null, fn ($q, $id) => $q->where('therapist_id', $id));
         } else {
-            $query->whereHas('therapist', fn ($q) => $q->where('user_id', $user->id));
+            $query->whereHas('therapist', fn ($q) => $q->where('user_id', $user->id))->whereNull('therapist_hidden_at');
         }
 
         $query->when($input['from'] ?? null, fn ($q, $from) => $q->where('starts_at', '>=', $from))
@@ -69,6 +70,29 @@ class BookingController extends PanelController
         $booking = $bookings->cancel($this->visible($request, $bookingId), 'therapist');
 
         return response()->json($presenter->booking($booking->load(['user', 'therapist.user', 'payment']), $request->user()));
+    }
+
+    /**
+     * Delete a cancelled session.
+     *
+     * Therapist only, and only for `cancelled` sessions (`canDelete: true`): removes it from the therapist's
+     * session list. The booking and its payment/refund record are kept, the client still sees it in the app,
+     * and admins still see it. Returns `204`. `409 not_deletable` if the session isn't cancelled.
+     */
+    public function destroy(Request $request, string $bookingId): Response
+    {
+        $booking = $this->visible($request, $bookingId);
+
+        if ($booking->therapist->user_id !== $request->user()->id) {
+            throw new ApiException('forbidden', 'Only the session\'s therapist can delete it from their list.', 403);
+        }
+        if ($booking->status !== Booking::CANCELLED) {
+            throw new ApiException('not_deletable', 'Only cancelled sessions can be deleted.', 409);
+        }
+
+        $booking->forceFill(['therapist_hidden_at' => $booking->therapist_hidden_at ?? now()])->save();
+
+        return response()->noContent();
     }
 
     /**

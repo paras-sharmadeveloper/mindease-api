@@ -33,6 +33,11 @@ trap '$PHP artisan up' EXIT
 
 COMPOSER_ALLOW_SUPERUSER=1 $PHP "$COMPOSER" install --no-dev --optimize-autoloader --no-interaction
 chown -R root:www-data "$APP_DIR"
+# The web server (www-data) must write to storage (logs, cache) and public/profile_pics (profile photos).
+# Re-apply on every deploy.
+mkdir -p public/profile_pics
+setfacl -R -m u:www-data:rwX storage bootstrap/cache public/profile_pics
+setfacl -dR -m u:www-data:rwX storage bootstrap/cache public/profile_pics
 $PHP artisan migrate --force
 $PHP artisan optimize
 $PHP artisan queue:restart

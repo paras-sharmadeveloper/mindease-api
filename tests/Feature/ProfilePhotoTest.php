@@ -3,10 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\ProfilePhoto;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
-/** Profile photo through POST /me (photo / removePhoto) and GET /avatars/{file}. */
+/** Profile photo through POST /me (photo / removePhoto): files in public/profile_pics; older ones via GET /avatars/{file}. */
 class ProfilePhotoTest extends ApiTestCase
 {
     private User $user;
@@ -15,6 +16,7 @@ class ProfilePhotoTest extends ApiTestCase
     {
         parent::setUp();
         Storage::fake('local');
+        Storage::fake(ProfilePhoto::DISK);
         $this->user = $this->signIn();
     }
 
@@ -40,15 +42,32 @@ class ProfilePhotoTest extends ApiTestCase
         $this->assertStringContainsString('GPS-SECRET-LOCATION', file_get_contents($file->getRealPath()));
 
         $url = $this->post('/v1/me', ['photo' => $file], ['Accept' => 'application/json'])->assertOk()->json('photoUrl');
-        $this->assertMatchesRegularExpression('#/avatars/[A-Za-z0-9]{40}\.jpg$#', $url);
+        $this->assertMatchesRegularExpression('#^http.*/profile_pics/[A-Za-z0-9]{40}\.jpg$#', $url);
         $this->getJson('/v1/me')->assertJsonPath('photoUrl', $url);
 
-        $res = $this->get(parse_url($url, PHP_URL_PATH))->assertOk()->assertHeader('Content-Type', 'image/jpeg');
-        $this->assertStringContainsString('immutable', $res->headers->get('Cache-Control'));
-        $bytes = $res->getContent();
+        // The web server serves public/profile_pics directly; the file is there under the URL's name.
+        $disk = Storage::disk(ProfilePhoto::DISK);
+        $disk->assertExists(basename($url));
+        $this->assertSame('profile_pics/'.basename($url), $this->user->fresh()->photo_path);
+        $bytes = $disk->get(basename($url));
         [$w, $h] = getimagesizefromstring($bytes);
         $this->assertSame([512, 512], [$w, $h]);
         $this->assertStringNotContainsString('GPS-SECRET-LOCATION', $bytes);
+    }
+
+    public function test_failed_write_keeps_the_old_photo_and_returns_503(): void
+    {
+        $this->post('/v1/me', ['photo' => UploadedFile::fake()->image('a.png', 300, 300)], ['Accept' => 'application/json'])->assertOk();
+        $oldPath = $this->user->fresh()->photo_path;
+
+        // Storage that can't write (e.g. folder not writable by www-data on the server).
+        $disk = \Mockery::mock(\Illuminate\Contracts\Filesystem\Filesystem::class);
+        $disk->shouldReceive('put')->andReturn(false);
+        Storage::shouldReceive('disk')->with(ProfilePhoto::DISK)->andReturn($disk);
+
+        $this->post('/v1/me', ['photo' => UploadedFile::fake()->image('b.png', 300, 300)], ['Accept' => 'application/json'])
+            ->assertStatus(503)->assertJsonPath('error.code', 'photo_unavailable');
+        $this->assertSame($oldPath, $this->user->fresh()->photo_path);
     }
 
     public function test_new_upload_replaces_and_deletes_the_old_file(): void
@@ -58,10 +77,9 @@ class ProfilePhotoTest extends ApiTestCase
         $second = $this->post('/v1/me', ['photo' => UploadedFile::fake()->image('b.png', 100, 200)], ['Accept' => 'application/json'])->assertOk()->json('photoUrl');
 
         $this->assertNotSame($first, $second);
-        Storage::disk('local')->assertMissing($oldPath);
-        $this->get(parse_url($first, PHP_URL_PATH))->assertNotFound();
+        Storage::disk(ProfilePhoto::DISK)->assertMissing(basename($oldPath));
         // Small photos are never scaled up.
-        [$w, $h] = getimagesizefromstring($this->get(parse_url($second, PHP_URL_PATH))->getContent());
+        [$w, $h] = getimagesizefromstring(Storage::disk(ProfilePhoto::DISK)->get(basename($second)));
         $this->assertSame([100, 100], [$w, $h]);
     }
 
@@ -71,7 +89,7 @@ class ProfilePhotoTest extends ApiTestCase
         $path = $this->user->fresh()->photo_path;
 
         $this->postJson('/v1/me', ['removePhoto' => true])->assertOk()->assertJsonPath('photoUrl', null);
-        Storage::disk('local')->assertMissing($path);
+        Storage::disk(ProfilePhoto::DISK)->assertMissing(basename($path));
     }
 
     public function test_rejects_files_that_are_not_photos(): void
@@ -103,13 +121,29 @@ class ProfilePhotoTest extends ApiTestCase
         $this->get('/avatars/'.str_repeat('a', 40).'.jpg')->assertNotFound();
     }
 
+    public function test_older_avatars_photos_still_work(): void
+    {
+        $name = str_repeat('b', 40).'.jpg';
+        Storage::disk('local')->put('avatars/'.$name, 'jpeg-bytes');
+        $this->user->forceFill(['photo_path' => 'avatars/'.$name])->save();
+
+        $url = $this->getJson('/v1/me')->assertOk()->json('photoUrl');
+        $this->assertStringEndsWith('/avatars/'.$name, $url);
+        $this->get(parse_url($url, PHP_URL_PATH))->assertOk()->assertHeader('Content-Type', 'image/jpeg');
+
+        // A new upload moves to profile_pics and removes the old private file.
+        $this->post('/v1/me', ['photo' => UploadedFile::fake()->image('a.png', 300, 300)], ['Accept' => 'application/json'])->assertOk();
+        Storage::disk('local')->assertMissing('avatars/'.$name);
+        $this->assertStringStartsWith('profile_pics/', $this->user->fresh()->photo_path);
+    }
+
     public function test_deleting_the_account_deletes_the_photo(): void
     {
         $this->post('/v1/me', ['photo' => UploadedFile::fake()->image('a.jpg')], ['Accept' => 'application/json'])->assertOk();
         $path = $this->user->fresh()->photo_path;
 
         $this->deleteJson('/v1/me')->assertNoContent(); // account deletion
-        Storage::disk('local')->assertMissing($path);
+        Storage::disk(ProfilePhoto::DISK)->assertMissing(basename($path));
     }
 
     public function test_photo_over_8_mb_says_too_large(): void

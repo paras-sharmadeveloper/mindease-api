@@ -13,13 +13,20 @@ use Illuminate\Support\Str;
  *  - drops EXIF metadata (phone photos can carry GPS location),
  *  - applies the EXIF rotation first, so portrait photos aren't sideways,
  *  - rejects anything that isn't really an image.
- * Files live on the private `local` disk under avatars/ with random names, served by GET /avatars/{file}.
+ * Files live in public/profile_pics/ (disk `profile_pics`) with random 40-character names, served straight by
+ * the web server at /profile_pics/<name>.jpg. Older photos (photo_path `avatars/...`) stay on the private `local`
+ * disk and are still served by GET /avatars/{file}.
  */
 class ProfilePhoto
 {
     public const SIZE = 512;
 
-    public const DIR = 'avatars';
+    public const DIR = 'profile_pics';
+
+    public const DISK = 'profile_pics';
+
+    /** Photos uploaded before profile_pics: private `local` disk, served by GET /avatars/{file}. */
+    public const LEGACY_DIR = 'avatars';
 
     private const MAX_PIXELS = 40_000_000; // refuse "decompression bomb" images
 
@@ -75,11 +82,17 @@ class ProfilePhoto
     /** Saves encoded JPEG bytes as the user's photo and deletes the previous file. */
     public function store(User $user, string $jpeg): void
     {
-        $path = self::DIR.'/'.Str::random(40).'.jpg';
-        Storage::disk('local')->put($path, $jpeg);
+        $name = Str::random(40).'.jpg';
+
+        // The disk doesn't throw, so check: a failed write must not save a URL that 404s.
+        if (! Storage::disk(self::DISK)->put($name, $jpeg)) {
+            report(new \RuntimeException('Profile photo not saved: '.public_path(self::DIR).' is missing or not writable by the web server user.'));
+
+            throw new ApiException('photo_unavailable', 'Photo uploads aren\'t available right now. Please try again later.', 503);
+        }
 
         $old = $user->photo_path;
-        $user->forceFill(['photo_path' => $path])->save();
+        $user->forceFill(['photo_path' => self::DIR.'/'.$name])->save();
         $this->deleteFile($old);
     }
 
@@ -93,16 +106,23 @@ class ProfilePhoto
     public function deleteFile(?string $path): void
     {
         if ($path && str_starts_with($path, self::DIR.'/')) {
+            Storage::disk(self::DISK)->delete(basename($path));
+        } elseif ($path && str_starts_with($path, self::LEGACY_DIR.'/')) {
             Storage::disk('local')->delete($path);
         }
     }
 
     public static function url(?string $path): ?string
     {
-        return $path ? url('/avatars/'.basename($path)) : null;
+        if (! $path) {
+            return null;
+        }
+
+        return str_starts_with($path, self::LEGACY_DIR.'/')
+            ? url('/avatars/'.basename($path))
+            : url('/'.self::DIR.'/'.basename($path));
     }
 
-    /** @param \GdImage $img */
     private function applyExifRotation($img, string $path)
     {
         $orientation = function_exists('exif_read_data') ? (@exif_read_data($path)['Orientation'] ?? 1) : 1;

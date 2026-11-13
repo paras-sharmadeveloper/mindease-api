@@ -79,6 +79,7 @@ class PanelPresenter
             'canCancel' => $this->bookings->isCancellable($booking),
             'canMarkOutcome' => $this->bookings->canMarkOutcome($booking),
             'canJoin' => $isTherapist && $booking->status === Booking::CONFIRMED,
+            'canDelete' => $isTherapist && $booking->status === Booking::CANCELLED,
             'joinOpensAt' => $booking->status === Booking::CONFIRMED ? Iso::utc($joinOpensAt) : null,
             'createdAt' => Iso::utc($booking->created_at),
         ];

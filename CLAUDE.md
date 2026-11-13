@@ -69,7 +69,7 @@ php artisan mindease:create-admin you@example.com   # first web-panel admin on a
 
 ## Status (v1 core)
 
-Done: auth (register/login/refresh rotation/reset + verify + confirm/logout/delete me, App `user` has no `name` (first/last only; panel keeps `name`). POST /me = the only profile update (JSON or form-data; first/last/preferred name, AU mobile as E.164, reminders, email change via signed link `GET /verify-email-change/...` → `pending_email`, `photo` / `removePhoto` via `app/Services/ProfilePhoto.php`: GD re-encode 512² JPEG, EXIF stripped, private disk, served by `GET /avatars/{file}`; needs php8.4-gd), PUT /me/password), content endpoints with ETag, assessment, progress events + rules, points, idempotency, tests, OpenAPI.
+Done: auth (register/login/refresh rotation/reset + verify + confirm/logout/delete me, App `user` has no `name` (first/last only; panel keeps `name`). POST /me = the only profile update (JSON or form-data; first/last/preferred name, AU mobile as E.164, reminders, email change via signed link `GET /verify-email-change/...` → `pending_email`, `photo` / `removePhoto` via `app/Services/ProfilePhoto.php`: GD re-encode 512² JPEG, EXIF stripped, saved to `public/profile_pics` (disk `profile_pics`, served as static files, folder must be writable by www-data; deploy scripts set ACLs); older `avatars/` photos stay on the private disk via `GET /avatars/{file}`; needs php8.4-gd), PUT /me/password), content endpoints with ETag, assessment, progress events + rules, points, idempotency, tests, OpenAPI.
 
 Open items:
 1. Get `user_progress.dart` from the mobile team → match `ProgressPresenter` output to `UserProgress.toJson()` exactly.

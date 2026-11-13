@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** Profile photo: path on the local (private) disk, served by GET /avatars/{file}. */
+/** Profile photo path: `profile_pics/<name>.jpg` (public/profile_pics) or, for older photos, `avatars/<name>.jpg` (private disk, GET /avatars/{file}). */
 return new class extends Migration
 {
     public function up(): void

@@ -57,6 +57,7 @@ class ProfileTest extends ApiTestCase
     public function test_save_changes_in_one_multipart_request_with_a_photo(): void
     {
         Storage::fake('local');
+        Storage::fake('profile_pics');
         Notification::fake();
 
         $res = $this->post('/v1/me', [
@@ -67,7 +68,7 @@ class ProfileTest extends ApiTestCase
             ->assertJsonPath('firstName', 'Bittu')->assertJsonPath('lastName', 'Sharma')
             ->assertJsonPath('email', 'bittu01@yopmail.com')->assertJsonPath('pendingEmail', 'bittu.new@example.com')
             ->assertJsonPath('mobile', '+61412345678')->assertJsonPath('remindersEnabled', false);
-        $this->assertMatchesRegularExpression('#/avatars/[A-Za-z0-9]{40}\.jpg$#', $res->json('photoUrl'));
+        $this->assertMatchesRegularExpression('#/profile_pics/[A-Za-z0-9]{40}\.jpg$#', $res->json('photoUrl'));
         Notification::assertSentTimes(VerifyNewEmailNotification::class, 1);
     }
 
@@ -81,6 +82,7 @@ class ProfileTest extends ApiTestCase
     public function test_a_bad_photo_saves_nothing(): void
     {
         Storage::fake('local');
+        Storage::fake('profile_pics');
         Notification::fake();
 
         $this->post('/v1/me', [

@@ -76,9 +76,9 @@ Route::get('verify-email-change/{user}/{hash}', function (Request $request, stri
         ]);
 })->name('email.change.verify');
 
-// Profile photos (random 40-character names, re-encoded JPEGs). A new upload gets a new name, so cache forever.
+// Older profile photos (uploaded before public/profile_pics). New ones are static files at /profile_pics/<name>.jpg.
 Route::get('avatars/{file}', function (string $file) {
-    $path = ProfilePhoto::DIR.'/'.$file;
+    $path = ProfilePhoto::LEGACY_DIR.'/'.$file;
     abort_unless(Storage::disk('local')->exists($path), 404);
 
     return response(Storage::disk('local')->get($path), 200, [

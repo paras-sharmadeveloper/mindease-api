@@ -30,6 +30,15 @@ return [
 
     'disks' => [
 
+        // Profile photos: public/profile_pics, served straight by the web server at /profile_pics/<name>.jpg.
+        'profile_pics' => [
+            'driver' => 'local',
+            'root' => public_path('profile_pics'),
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
