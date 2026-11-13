@@ -51,7 +51,7 @@ These answers are sensitive. Encrypt at rest, exclude from analytics, and return
 The client sends **events**, never points or completion flags.
 
 ```jsonc
-// header: Idempotency-Key: <uuid>  (replays return the same result)
+// header: Idempotency-Key: <uuid>  (optional for now; when sent, replays return the same result)
 { "type": "lesson_read",     "phaseId": "p1", "lessonId": "p1l1" }
 { "type": "video_progress",  "phaseId": "p1", "videoId": "p1v1",
   "position": 41.5, "watched": "111110011..." }              // 1 char per second

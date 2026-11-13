@@ -16,7 +16,7 @@ Live docs (local): `http://localhost:8000/docs/api` · OpenAPI JSON: `/docs/api.
 
 ## Auth
 
-- Access token TTL: **15 min**. Refresh token TTL: **60 days**, **rotated on every refresh**.
+- Access token TTL: **30 min** (was 15). Refresh token TTL: **60 days**, **rotated on every refresh**.
 - Always store the **new** refresh token from `/auth/refresh`. Reusing an old one revokes the whole session (stolen-token protection), so **run refresh calls one at a time** (single-flight). Don't fire two refreshes in parallel.
   - After a reuse, every token from that sign-in (including the newest one) returns `401 invalid_refresh_token`. Send the user to sign in again.
 - **Added:** `POST /auth/password-reset/confirm { email, token, password }` → `204`, or `422 invalid_reset_token`. The reset email links to a **web page**, `https://api.<domain>/reset-password?token=…&email=…`, where the user sets the new password; the app needs no reset screen. (A `mindease://` deep link is still possible via `MINDEASE_RESET_URL` if the app wants to handle it.) Confirming signs out all devices.
@@ -216,7 +216,7 @@ These are easier than the generic `/events` endpoint. They need **no `Idempotenc
 
 ## Progress events (generic endpoint, still supported)
 
-- `Idempotency-Key` header is **required** on `POST /me/programs/{id}/events` (UUID per event; reuse the same key when retrying the same event).
+- `Idempotency-Key` header is **optional for now** on `POST /me/programs/{id}/events` (and `POST /me/bookings`). Without it the request runs normally, with no replay protection. When sent: a UUID per event; reuse the same key when retrying the same event.
   - Replay → same body, header `Idempotent-Replayed: true`.
   - Same key with a different body → `422 idempotency_key_reused`.
   - Same key while the first is in flight → `409 idempotency_in_progress` (retry).
@@ -264,7 +264,7 @@ Sessions are paid with Stripe and held over Zoom Video SDK. Prices, refund rules
 | GET | `/therapists?focus=stress,sleep` | `[{ id, name, bio, specialties, photoUrl, timezone, priceCents, currency, sessionMinutes, matchedFocus }]`, **best match first** (see below) |
 | GET | `/therapists/{id}` | One therapist, same shape (without `matchedFocus`). `404 therapist_not_found` |
 | GET | `/therapists/{id}/slots?from=&to=` | ISO 8601. Default: now → +14 days, at most 31 days. `{ therapistId, sessionMinutes, slots: [{ startsAt, endsAt }] }`, UTC |
-| POST | `/me/bookings` | **`Idempotency-Key` required.** Body below. `201 { booking, payment: { clientSecret, publishableKey, status } }` |
+| POST | `/me/bookings` | `Idempotency-Key` optional for now (recommended: it stops a retry from booking twice). Body below. `201 { booking, payment: { clientSecret, publishableKey, status } }` |
 | GET | `/me/bookings?scope=upcoming\|past` | List of `booking` |
 | GET | `/me/bookings/{id}` | `booking` |
 | POST | `/me/bookings/{id}/cancel` | Returns `booking`. Safe to retry |

@@ -29,7 +29,7 @@ Owner: Paras (ThunderClap). Talk to Paras in Hinglish; client-facing text in for
 | **Progression rules (pure PHP port of the Dart ProgressionService)** | `app/Domain/ProgressionService.php`, `app/Domain/ProgressState.php` |
 | Progress events (transaction + user row lock, completion once) | `app/Services/Progress/ProgressEventHandler.php` |
 | ProgramProgress JSON shape (**only place to change the shape**) | `app/Services/Progress/ProgressPresenter.php` |
-| Idempotency-Key | `app/Http/Middleware/EnsureIdempotency.php` |
+| Idempotency-Key (**optional for now**: no header = request runs without replay protection; mobile team to adopt later) | `app/Http/Middleware/EnsureIdempotency.php` |
 | Questionnaire → focus phases (port of `recommendation_engine.dart`) + therapist focus areas; `PUT /me/assessment` merges answers | `app/Domain/RecommendationEngine.php`, `app/Http/Controllers/Api/AssessmentController.php` |
 | Home screen (`GET /me/home`: continue card, your focus, points) | `app/Http/Controllers/Api/HomeController.php` |
 | Per-action progress endpoints (lesson read / video / activity / quiz → same `ProgressEventHandler`) | `app/Http/Controllers/Api/ProgramActionController.php` |

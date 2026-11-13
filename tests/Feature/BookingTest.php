@@ -162,6 +162,14 @@ class BookingTest extends ApiTestCase
         $this->book('2026-11-02T01:00:00Z')->assertStatus(409); // inside min notice
     }
 
+    public function test_booking_works_without_idempotency_key(): void
+    {
+        $this->signIn();
+
+        $this->postJson('/v1/me/bookings', ['therapistId' => $this->therapist->id, 'startsAt' => self::TUE_9AM])
+            ->assertCreated()->assertHeaderMissing('Idempotent-Replayed');
+    }
+
     public function test_idempotent_replay_and_retry_replaces_own_hold(): void
     {
         $this->signIn();

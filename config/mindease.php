@@ -4,7 +4,7 @@ return [
 
     'tokens' => [
         // Short-lived bearer token (Sanctum). The app refreshes it with /auth/refresh.
-        'access_ttl_minutes' => (int) env('MINDEASE_ACCESS_TTL_MINUTES', 15),
+        'access_ttl_minutes' => (int) env('MINDEASE_ACCESS_TTL_MINUTES', 30),
         // Rotated on every refresh; reuse of an old one revokes the whole session family.
         'refresh_ttl_days' => (int) env('MINDEASE_REFRESH_TTL_DAYS', 60),
     ],

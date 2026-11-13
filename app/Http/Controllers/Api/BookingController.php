@@ -11,6 +11,7 @@ use App\Services\Booking\BookingService;
 use App\Services\Video\ZoomVideoToken;
 use Carbon\CarbonImmutable;
 use Dedoc\Scramble\Attributes\Group;
+use Dedoc\Scramble\Attributes\HeaderParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -25,7 +26,7 @@ class BookingController extends Controller
      * The booking screen's "Book": `therapistId`, `startsAt` (the chosen slot's `startsAt` from
      * GET /therapists/{id}/slots), `focus` (focus-area keys from GET /focus-areas), `mobile` (Australian mobile,
      * e.g. `0412 345 678`; also saved to the profile if it has none), `notes` and, optionally, `paymentMethodId`.
-     * Requires an `Idempotency-Key` header.
+     * `Idempotency-Key` header is optional for now; send a UUID so a retry after a network error can't book twice.
      *
      * Payment, either way:
      * - **PaymentSheet** (no `paymentMethodId`): present Stripe's PaymentSheet with `payment.clientSecret`.
@@ -36,6 +37,7 @@ class BookingController extends Controller
      * Returns `201 { booking, payment: { clientSecret, publishableKey, status } }`. The booking becomes `confirmed`
      * only when Stripe tells the server, so poll GET /me/bookings/{id}. Unpaid holds lapse after `holdExpiresAt`.
      */
+    #[HeaderParameter('Idempotency-Key', 'Optional for now. A new UUID v4 per action, and the same one when retrying it: a retry then returns the first response (header `Idempotent-Replayed: true`) instead of running twice. Without it the request runs normally.', required: false, type: 'string', format: 'uuid', example: '3f1c9a2e-7b4d-4c1e-9f0a-2d6b8e5c1a47')]
     public function store(Request $request, BookingService $bookings, BookingPresenter $presenter): JsonResponse
     {
         if (is_string($request->input('mobile'))) {

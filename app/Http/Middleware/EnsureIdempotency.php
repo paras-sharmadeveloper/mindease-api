@@ -10,7 +10,9 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Idempotency-Key handling for POST /events:
+ * Idempotency-Key handling for POST /events and POST /me/bookings. The header is OPTIONAL for now:
+ * without it the request runs normally, with no replay protection.
+ * With a key:
  *  - first request with a key: processed; a 2xx response is stored (encrypted) for 48h
  *  - same key + same body again: the stored response is replayed (header Idempotent-Replayed: true)
  *  - same key + different body: 422 idempotency_key_reused
@@ -23,8 +25,9 @@ class EnsureIdempotency
     {
         $key = trim((string) $request->header('Idempotency-Key'));
 
+        // Optional for now (mobile team to adopt later): no key = no replay protection.
         if ($key === '') {
-            throw new ApiException('idempotency_key_required', 'Send an Idempotency-Key header (UUID) with this request.', 422);
+            return $next($request);
         }
         if (strlen($key) > 100) {
             throw new ApiException('idempotency_key_invalid', 'Idempotency-Key must be at most 100 characters.', 422);

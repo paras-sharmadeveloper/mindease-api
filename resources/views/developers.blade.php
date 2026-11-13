@@ -309,7 +309,7 @@ final completion = r.data['completion']; // null or { phaseId, pointsAwarded, ..
       <p>Sign-in returns two tokens. Send the <b>access token</b> as <code>Authorization: Bearer …</code>. When it expires, exchange the <b>refresh token</b> for a new pair.</p>
       <div class="tbl-wrap"><table>
         <tr><th>Token</th><th>Lifetime</th><th>Notes</th></tr>
-        <tr><td>accessToken</td><td>15 minutes</td><td>Keep it in memory or secure storage.</td></tr>
+        <tr><td>accessToken</td><td>30 minutes</td><td>Keep it in memory or secure storage.</td></tr>
         <tr><td>refreshToken</td><td>60 days</td><td><b>Rotated on every refresh.</b> Store it only in <code>flutter_secure_storage</code> (Keychain or Keystore).</td></tr>
       </table></div>
       <h3>Refresh rules</h3>
@@ -430,7 +430,7 @@ on DioException catch (e) {
   <h2>Idempotency &amp; offline queue</h2>
   <div class="split">
     <div class="prose">
-      <p><code>POST /me/programs/{id}/events</code> and <code>POST /me/bookings</code> <b>require</b> an <code>Idempotency-Key</code> header. Use a new UUID v4 for each new action, and <b>send the same key again when you retry that action</b>. The server then runs each action only once, even after a timeout or on a flaky network.</p>
+      <p><code>POST /me/programs/{id}/events</code> and <code>POST /me/bookings</code> accept an <code>Idempotency-Key</code> header. <b>It is optional for now</b>: without it the request runs normally, with no replay protection. Sending it is recommended. Use a new UUID v4 for each new action, and <b>send the same key again when you retry that action</b>. The server then runs each action only once, even after a timeout or on a flaky network.</p>
       <div class="tbl-wrap"><table>
         <tr><th>Situation</th><th>Response</th></tr>
         <tr><td>Same key, same body (replay)</td><td>The original response again, with header <code>Idempotent-Replayed: true</code></td></tr>
@@ -757,7 +757,7 @@ const ERRORS = [
 ];
 
 // ---------------------------------------------------------------- endpoints
-// auth: bearer required · idem: Idempotency-Key required · examples: switchable request bodies
+// auth: bearer required · idem: accepts an optional Idempotency-Key · examples: switchable request bodies
 const GROUPS = [
  { id: 'auth', title: 'Auth', intro: 'Sign up, sign in, refresh tokens, reset passwords and log out. These endpoints don\'t take a bearer token.', endpoints: [
   { id: 'register', method: 'POST', path: '/auth/register', title: 'Create an account', auth: false,
@@ -864,7 +864,7 @@ const GROUPS = [
     params: [['programId', 'path', 'string', true, '']], sample: { programId: 'mhfa' }, response: [200, PROGRESS], errors: [[404, 'program_not_found', '']] },
   { id: 'events', method: 'POST', path: '/me/programs/{programId}/events', title: 'Send a progress event', auth: true, idem: true,
     desc: 'One event per call. Returns the new <code>progress</code>, and a <code>completion</code> when this event completed a phase. Pick an event type to see its body.',
-    params: [['Idempotency-Key', 'header', 'uuid', true, 'New per event; the same key on retry.'], ['programId', 'path', 'string', true, ''], ['type', 'body', 'enum', true, '<code>lesson_read</code> · <code>video_progress</code> · <code>activity_save</code> · <code>quiz_submit</code>'], ['phaseId', 'body', 'string', true, 'The phase must be unlocked.'], ['lessonId', 'body', 'string', false, 'lesson_read'], ['videoId, position, watched', 'body', 'string, number, string', false, 'video_progress. <code>watched</code>: one <code>0</code>/<code>1</code> per second.'], ['complete, answers', 'body', 'boolean, object', false, 'activity_save. Keys are prompt ids: <code>{ text, chips[] }</code>'], ['answers', 'body', 'int[]', false, 'quiz_submit. A 0-based option index per question.']],
+    params: [['Idempotency-Key', 'header', 'uuid', false, 'Optional for now. New per event; the same key on retry.'], ['programId', 'path', 'string', true, ''], ['type', 'body', 'enum', true, '<code>lesson_read</code> · <code>video_progress</code> · <code>activity_save</code> · <code>quiz_submit</code>'], ['phaseId', 'body', 'string', true, 'The phase must be unlocked.'], ['lessonId', 'body', 'string', false, 'lesson_read'], ['videoId, position, watched', 'body', 'string, number, string', false, 'video_progress. <code>watched</code>: one <code>0</code>/<code>1</code> per second.'], ['complete, answers', 'body', 'boolean, object', false, 'activity_save. Keys are prompt ids: <code>{ text, chips[] }</code>'], ['answers', 'body', 'int[]', false, 'quiz_submit. A 0-based option index per question.']],
     sample: { programId: 'mhfa' },
     examples: {
       lesson_read: { type: 'lesson_read', phaseId: 'p1', lessonId: 'p1l1' },
@@ -895,7 +895,7 @@ const GROUPS = [
  { id: 'bookings', title: 'Bookings', intro: 'Paid with Stripe. A booking is confirmed only when Stripe\'s webhook reaches the server.', endpoints: [
   { id: 'create-booking', method: 'POST', path: '/me/bookings', title: 'Book a session', auth: true, idem: true,
     desc: 'Holds the slot as <code>pending</code> for 15 minutes and creates a Stripe PaymentIntent at the server\'s price. Pass <code>payment</code> to PaymentSheet. Booking the same slot again replaces your earlier unpaid hold.',
-    params: [['Idempotency-Key', 'header', 'uuid', true, ''], ['therapistId', 'body', 'uuid', true, ''], ['startsAt', 'body', 'ISO date', true, 'The chosen slot: exactly a <code>startsAt</code> from /slots.'], ['focus', 'body', 'string[]', false, 'Up to 5 keys from /focus-areas.'], ['mobile', 'body', 'string', false, 'Australian mobile. Saved to the profile too if it has none.'], ['notes', 'body', 'string', false, 'Max 2000. Private to the user and the therapist.'], ['paymentMethodId', 'body', 'string', false, '<code>pm_…</code> from Stripe\'s <code>createPaymentMethod</code> (own card form). Charged at once; omit to use PaymentSheet.']],
+    params: [['Idempotency-Key', 'header', 'uuid', false, 'Optional for now. Recommended: a retry with the same key can\'t book twice.'], ['therapistId', 'body', 'uuid', true, ''], ['startsAt', 'body', 'ISO date', true, 'The chosen slot: exactly a <code>startsAt</code> from /slots.'], ['focus', 'body', 'string[]', false, 'Up to 5 keys from /focus-areas.'], ['mobile', 'body', 'string', false, 'Australian mobile. Saved to the profile too if it has none.'], ['notes', 'body', 'string', false, 'Max 2000. Private to the user and the therapist.'], ['paymentMethodId', 'body', 'string', false, '<code>pm_…</code> from Stripe\'s <code>createPaymentMethod</code> (own card form). Charged at once; omit to use PaymentSheet.']],
     body: { therapistId: TID, startsAt: '2026-11-02T22:00:00.000Z', focus: ['anxiety'], mobile: '0412 345 678', notes: 'First session' },
     response: [201, { booking: Object.assign({}, BOOKING, { status: 'pending', holdExpiresAt: '2026-10-28T04:25:00.000Z', payment: { status: 'requires_payment_method', amountCents: 15000, refundedCents: 0 } }), payment: { clientSecret: 'pi_3Q…_secret_…', publishableKey: 'pk_test_…', status: 'requires_payment_method' } }],
     errors: [[404, 'therapist_not_found', ''], [409, 'slot_unavailable', 'field: startsAt'], [402, 'payment_declined', 'Card from paymentMethodId declined'], [422, 'validation_failed', 'focus / mobile / paymentMethodId'], [502, 'payment_unavailable', '']] },
@@ -982,7 +982,7 @@ GROUPS.forEach(g => {
     const exampleKeys = ep.examples ? Object.keys(ep.examples) : null;
     const params = ep.params?.length ? `<h3>Parameters</h3><div class="tbl-wrap"><table><tr><th>Name</th><th>In</th><th>Description</th></tr>${ep.params.map(([n, inn, t, r, d]) => `<tr><td><code>${esc(n)}</code>${r ? '<span class="req">required</span>' : '<span class="opt">optional</span>'}<span class="type">${esc(t)}</span></td><td>${inn}</td><td>${d}</td></tr>`).join('')}</table></div>` : '';
     const errs = ep.errors?.length ? `<h3>Errors</h3><div class="tbl-wrap"><table><tr><th>Status</th><th>Code</th><th>Notes</th></tr>${ep.errors.map(([s, c, n]) => `<tr><td><code>${s}</code></td><td><code>${c.split(' · ').join('</code> <code>')}</code></td><td>${esc(n)}</td></tr>`).join('')}</table></div>` : '';
-    const tags = `<span class="tags">${ep.auth ? '<span class="tag lock">🔒 Bearer</span>' : '<span class="tag">No auth</span>'}${ep.idem ? '<span class="tag">Idempotency-Key</span>' : ''}</span>`;
+    const tags = `<span class="tags">${ep.auth ? '<span class="tag lock">🔒 Bearer</span>' : '<span class="tag">No auth</span>'}${ep.idem ? '<span class="tag">Idempotency-Key (optional)</span>' : ''}</span>`;
     ref.insertAdjacentHTML('beforeend', `
 <section class="doc" id="ep-${ep.id}" data-search="${esc([g.title, ep.title, ep.method, ep.path, ep.desc.replace(/<[^>]+>/g, '')].join(' ').toLowerCase())}">
   ${i === 0 ? `<div class="eyebrow">API reference · ${esc(g.title)}</div>` : `<div class="eyebrow">${esc(g.title)}</div>`}

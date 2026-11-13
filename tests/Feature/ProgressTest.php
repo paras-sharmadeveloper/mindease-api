@@ -39,12 +39,14 @@ class ProgressTest extends ApiTestCase
             ->assertStatus(422)->assertJsonPath('error.field', 'type');
     }
 
-    public function test_idempotency_key_is_required(): void
+    public function test_idempotency_key_is_optional(): void
     {
         $this->signIn();
 
+        // Without the header the event still runs (no replay protection).
         $this->postJson('/v1/me/programs/mhfa/events', ['type' => 'lesson_read', 'phaseId' => 'p1', 'lessonId' => 'p1l1'])
-            ->assertStatus(422)->assertJsonPath('error.code', 'idempotency_key_required');
+            ->assertOk()->assertHeaderMissing('Idempotent-Replayed');
+        $this->assertSame(0, \Illuminate\Support\Facades\DB::table('idempotency_keys')->count());
     }
 
     public function test_lesson_read_counts_once(): void // C2
