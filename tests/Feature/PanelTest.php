@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Booking;
 use App\Models\Payment;
+use App\Models\PhaseCompletion;
 use App\Models\Therapist;
 use App\Models\User;
 use App\Services\Payments\PaymentGateway;
@@ -180,6 +181,34 @@ class PanelTest extends ApiTestCase
             ->assertJsonPath('newUsersLast24Hours', null)
             ->assertJsonPath('newUsersLast7Days', null)
             ->assertJsonPath('newUsersLast30Days', null);
+    }
+
+    public function test_admin_lists_app_sign_ups_newest_first_with_search_and_period(): void
+    {
+        $old = User::factory()->create(['name' => 'Old Timer', 'email' => 'old@example.com']);
+        $old->forceFill(['created_at' => now()->subDays(40)])->save();
+        $client = User::factory()->create(['name' => 'Alex Client', 'email' => 'alex@example.com']);
+        $client->forceFill(['created_at' => now()->subHours(2)])->save();
+        $this->confirmedBooking(client: $client);
+        PhaseCompletion::create(['user_id' => $client->id, 'program_id' => 'mhfa', 'phase_id' => 'p1', 'points' => 100, 'completed_at' => now()]);
+
+        $this->signIn($this->admin);
+        $this->getJson('/v1/panel/users')->assertOk()
+            ->assertJsonPath('total', 2) // the admin and therapist accounts are left out
+            ->assertJsonPath('counts.all', 2)
+            ->assertJsonPath('counts.last24Hours', 1)
+            ->assertJsonPath('data.0.email', 'alex@example.com')
+            ->assertJsonPath('data.0.bookings', 1)
+            ->assertJsonPath('data.0.phasesCompleted', 1)
+            ->assertJsonPath('data.0.points', 100)
+            ->assertJsonPath('data.0.questionnaireCompleted', false)
+            ->assertJsonPath('data.1.email', 'old@example.com');
+
+        $this->getJson('/v1/panel/users?q=OLD')->assertOk()->assertJsonPath('total', 1)->assertJsonPath('data.0.name', 'Old Timer');
+        $this->getJson('/v1/panel/users?period=7d')->assertOk()->assertJsonPath('total', 1)->assertJsonPath('data.0.name', 'Alex Client');
+
+        $this->signIn($this->therapistUser);
+        $this->getJson('/v1/panel/users')->assertForbidden();
     }
 
     public function test_therapist_cancel_refunds_in_full_even_late(): void

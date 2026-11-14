@@ -102,6 +102,9 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'role:admin,therapist'])->pre
         Route::get('therapists', [Panel\TherapistController::class, 'index']);
         Route::post('therapists', [Panel\TherapistController::class, 'store']);
 
+        // People who signed up in the app.
+        Route::get('users', [Panel\UserController::class, 'index']);
+
         // Content shown in the app (live on save).
         Route::get('programs', [Panel\ProgramController::class, 'index']);
         Route::post('programs', [Panel\ProgramController::class, 'store']);
