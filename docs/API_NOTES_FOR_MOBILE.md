@@ -309,6 +309,56 @@ The booking (and `GET /me/bookings`) now also returns `focus: [{ key, label }]` 
 
 **Cancellation:** `canCancel` and `refundIfCancelledCents` tell the app what to show before the user confirms. Current placeholder rule: a full refund when cancelled at least 24 hours before the start, otherwise no refund.
 
-**Joining the call:** request a token from `joinOpensAt` (10 minutes before the start) until `endsAt`. Request a new token each time the user joins; do not store it.
+**Joining the call:** request a token from `joinOpensAt` (10 minutes before the start) until `endsAt`. Request a new token each time the user joins; do not store it. Full flow below.
+
+### Video call (Zoom Video SDK)
+
+Sessions run on the **Zoom Video SDK** (`flutter_zoom_videosdk`), not Zoom Meetings. The client joins from the app; the therapist joins from the web panel in a browser. Both end up in the same Zoom session because the session name is the booking id.
+
+**How it works**
+
+1. **The booking must be `confirmed`** (paid; see the payment flow above).
+2. **Join window:** from `joinOpensAt` (10 minutes before `startsAt`) until `endsAt`. Show the "Join" button only when `status` is `confirmed` and the current time is inside this window. `joinOpensAt` is `null` for any booking that isn't confirmed.
+3. **Get a token from our API** each time the user taps "Join" (including a rejoin after a dropped connection):
+
+   `POST /me/bookings/{id}/video-token` (no body)
+
+   ```json
+   {
+     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+     "sessionName": "9b2f6c1e-4d7a-4f3b-8a2e-1c5d7e9f0a3b",
+     "userIdentity": "9b2f6c1e4d7a4f3b8a2e1c5d7e9f0a3b",
+     "role": "participant",
+     "expiresAt": "2026-11-02T23:05:00.000Z"
+   }
+   ```
+
+   The server checks that the booking belongs to the signed-in user, that it is confirmed, and that the join window is open. It then signs a Zoom Video SDK JWT. The client always gets `role: participant`; the therapist (web panel) is the host.
+4. **Join the session** with `flutter_zoom_videosdk`, using the response values as they are:
+   - `sessionName` → the session name in the join context (do not change or reformat it)
+   - `token` → the JWT
+   - `userName` → the user's display name (for example their preferred or first name)
+   - session password: leave empty
+5. Audio and video go directly between the app and Zoom. Our API is not involved after the token is issued.
+
+**Rules for the app**
+
+- **Never put the Zoom SDK Key or SDK Secret in the app**, and never generate the JWT in the app. Remove any key, secret or test token added during development. The keys live only on our server.
+- **Use only the token from our API.** A token from a different Zoom account (for example a personal test account) puts the user in a different session, and the therapist will never see them.
+- **Do not cache or store the token.** Request a new one for every join or rejoin. A token is valid until 15 minutes after `endsAt` (and for at least 30 minutes from when it was issued, as Zoom requires).
+- **Ask for camera and microphone permission** before joining, and handle a refusal (the user can still join with audio or video off).
+- The client can join before the therapist; show "Waiting for your therapist to join" until the host arrives.
+- Sessions are **not recorded**. Do not turn on cloud or local recording.
+
+**Errors from `POST /me/bookings/{id}/video-token`**
+
+| Status | `error.code` | Meaning | What to show |
+|---|---|---|---|
+| 404 | – | Not this user's booking, or it doesn't exist | "Session not found." |
+| 409 | `booking_not_confirmed` | Booking isn't paid/confirmed | "This session isn't confirmed yet." |
+| 409 | `join_window_closed` | Too early or the session has ended | The API's `error.message` (it states when joining opens) |
+| 503 | `video_unavailable` | Video is not configured on the server | "Video sessions aren't available right now. Please try again later." |
+
+If Zoom itself rejects the join (invalid token or signature), request a new token once and try again. If it fails again, show a generic error and let the user retry; please report it to the backend team with the time and booking id.
 
 **Errors:** `therapist_not_found` 404, `slot_unavailable` 409 (`field: startsAt`; refresh the slots), `payment_unavailable` 502 (retry), `booking_not_cancellable` 409, `booking_not_confirmed` 409, `join_window_closed` 409, `video_unavailable` 503, `range_too_long` 422.
