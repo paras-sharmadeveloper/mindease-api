@@ -211,6 +211,24 @@ class PanelTest extends ApiTestCase
         $this->getJson('/v1/panel/users')->assertForbidden();
     }
 
+    public function test_check_payment_reconfirms_a_paid_session_that_lapsed_without_a_webhook(): void
+    {
+        $booking = $this->confirmedBooking();
+        $booking->update(['status' => Booking::CANCELLED, 'cancel_reason' => 'expired', 'cancelled_at' => now(), 'slot_lock' => null, 'confirmed_at' => null]);
+
+        $this->signIn($this->therapistUser);
+        $this->getJson('/v1/panel/bookings?scope=all')->assertJsonPath('0.canCheckPayment', true);
+
+        // Stripe hasn't got the money: nothing changes.
+        $this->postJson("/v1/panel/bookings/{$booking->id}/check-payment")->assertStatus(409)->assertJsonPath('error.code', 'payment_not_received');
+        $this->assertSame(Booking::CANCELLED, $booking->fresh()->status);
+
+        $this->stripe->statuses[$booking->payment->stripe_payment_intent_id] = 'succeeded';
+        $this->postJson("/v1/panel/bookings/{$booking->id}/check-payment")->assertOk()
+            ->assertJsonPath('status', 'confirmed')
+            ->assertJsonPath('canCheckPayment', false);
+    }
+
     public function test_therapist_cancel_refunds_in_full_even_late(): void
     {
         $booking = $this->confirmedBooking('2026-11-02T22:00:00Z'); // 22h away: a user cancel would get no refund

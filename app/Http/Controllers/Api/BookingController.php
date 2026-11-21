@@ -34,8 +34,9 @@ class BookingController extends Controller
      *   it at once. `payment.status` is `succeeded`/`processing`, or `requires_action` (3-D Secure: call Stripe's
      *   `handleNextAction(clientSecret)`). A declined card returns `402 payment_declined` and nothing is booked.
      *
-     * Returns `201 { booking, payment: { clientSecret, publishableKey, status } }`. The booking becomes `confirmed`
-     * only when Stripe tells the server, so poll GET /me/bookings/{id}. Unpaid holds lapse after `holdExpiresAt`.
+     * Returns `201 { booking, payment: { clientSecret, publishableKey, status } }`. A card that is charged at once
+     * (`payment.status: succeeded`) comes back already `confirmed`. Otherwise poll GET /me/bookings/{id}: it checks
+     * with Stripe and turns `confirmed` once the money is in. Unpaid holds lapse after `holdExpiresAt`.
      */
     #[HeaderParameter('Idempotency-Key', 'Optional for now. A new UUID v4 per action, and the same one when retrying it: a retry then returns the first response (header `Idempotent-Replayed: true`) instead of running twice. Without it the request runs normally.', required: false, type: 'string', format: 'uuid', example: '3f1c9a2e-7b4d-4c1e-9f0a-2d6b8e5c1a47')]
     public function store(Request $request, BookingService $bookings, BookingPresenter $presenter): JsonResponse
@@ -90,9 +91,16 @@ class BookingController extends Controller
      *
      * `?scope=upcoming|past` (default: all, newest start first).
      */
-    public function index(Request $request, BookingPresenter $presenter): JsonResponse
+    public function index(Request $request, BookingPresenter $presenter, BookingService $bookings): JsonResponse
     {
         $scope = $request->validate(['scope' => ['nullable', 'in:upcoming,past']])['scope'] ?? null;
+
+        // Ask Stripe about bookings still waiting for payment (or lapsed while waiting) before filtering, so a late
+        // payment confirms them without a webhook and they land in the right scope.
+        $request->user()->bookings()->with('payment')
+            ->where(fn ($q) => $q->where('status', Booking::PENDING)
+                ->orWhere(fn ($q) => $q->where('status', Booking::CANCELLED)->where('cancel_reason', 'expired')->where('starts_at', '>', now())))
+            ->get()->each(fn (Booking $b) => $bookings->syncPayment($b));
 
         $query = $request->user()->bookings()->with(['therapist.user', 'payment']);
 
@@ -108,11 +116,14 @@ class BookingController extends Controller
     /**
      * Get a booking.
      *
-     * Poll this after the Stripe PaymentSheet closes until `status` is `confirmed`.
+     * Poll this after the Stripe PaymentSheet closes until `status` is `confirmed`. While the booking is `pending`
+     * the server checks the payment with Stripe on each call, so it confirms as soon as Stripe has the money.
      */
-    public function show(Request $request, string $bookingId, BookingPresenter $presenter): JsonResponse
+    public function show(Request $request, string $bookingId, BookingPresenter $presenter, BookingService $bookings): JsonResponse
     {
-        return response()->json($presenter->booking($this->owned($request, $bookingId)));
+        $booking = $this->owned($request, $bookingId);
+
+        return response()->json($presenter->booking($bookings->awaitsPayment($booking) ? $bookings->syncPayment($booking) : $booking));
     }
 
     /**

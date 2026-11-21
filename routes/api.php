@@ -66,7 +66,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Points (read-only)
     Route::get('me/points', [PointsController::class, 'show']);
 
-    // Therapist booking (Phase 2). Paid via Stripe; confirmed only by the Stripe webhook.
+    // Therapist booking (Phase 2). Paid via Stripe; confirmed only when Stripe says the payment succeeded (webhook or server-side check).
     Route::get('focus-areas', [TherapistController::class, 'focusAreas']);
     Route::get('therapists', [TherapistController::class, 'index']);
     Route::get('therapists/{therapistId}', [TherapistController::class, 'show']);
@@ -95,6 +95,7 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'role:admin,therapist'])->pre
     Route::get('bookings/{bookingId}', [Panel\BookingController::class, 'show']);
     Route::post('bookings/{bookingId}/cancel', [Panel\BookingController::class, 'cancel']);
     Route::delete('bookings/{bookingId}', [Panel\BookingController::class, 'destroy']);
+    Route::post('bookings/{bookingId}/check-payment', [Panel\BookingController::class, 'checkPayment']);
     Route::post('bookings/{bookingId}/outcome', [Panel\BookingController::class, 'outcome']);
     Route::post('bookings/{bookingId}/video-token', [Panel\BookingController::class, 'videoToken']);
 

@@ -39,6 +39,11 @@ class StripeGateway implements PaymentGateway
         return ['id' => $intent->id, 'clientSecret' => $intent->client_secret, 'status' => $intent->status];
     }
 
+    public function paymentIntentStatus(string $paymentIntentId): string
+    {
+        return $this->call(fn () => $this->stripe->paymentIntents->retrieve($paymentIntentId))->status;
+    }
+
     public function cancelPaymentIntent(string $paymentIntentId): void
     {
         $this->call(fn () => $this->stripe->paymentIntents->cancel($paymentIntentId));

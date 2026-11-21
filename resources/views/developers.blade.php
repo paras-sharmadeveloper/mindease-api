@@ -586,7 +586,7 @@ Future&lt;void&gt; flush() async {
         <li><b>Load slots</b> with <code>GET /therapists/{id}/slots?from=…&amp;to=…</code>, at most 31 days at a time. Times are UTC; show them in the device's time zone and group them by local date.</li>
         <li><b>Hold the slot.</b> <code>POST /me/bookings</code> with an <code>Idempotency-Key</code> returns a <code>pending</code> booking and a Stripe <code>clientSecret</code>. The server sets the price.</li>
         <li><b>Pay</b> with Stripe's PaymentSheet (<code>flutter_stripe</code>) using <code>payment.clientSecret</code> and <code>payment.publishableKey</code>.</li>
-        <li><b>Wait for confirmation.</b> When the sheet closes successfully, show <i>Confirming…</i>. Poll <code>GET /me/bookings/{id}</code> every 2 s, for up to 30 s, until <code>status</code> is <code>confirmed</code>. Only Stripe's webhook to our server can confirm a booking.</li>
+        <li><b>Wait for confirmation.</b> When the sheet closes successfully, show <i>Confirming…</i>. Poll <code>GET /me/bookings/{id}</code> every 2 s, for up to 30 s, until <code>status</code> is <code>confirmed</code>. Each poll makes the server check the payment with Stripe; only Stripe's answer can confirm a booking, never the app.</li>
       </ol>
       <h3>Booking status</h3>
       <p><code>pending</code> → <code>confirmed</code> → <code>completed</code> or <code>no_show</code>. A booking can also become <code>cancelled</code>, with <code>cancelReason</code> set to <code>user</code>, <code>expired</code>, <code>replaced</code>, <code>payment_failed</code> or <code>therapist</code>. An unpaid hold lapses at <code>holdExpiresAt</code>, 15 minutes after it was created.</p>
@@ -618,7 +618,7 @@ await Stripe.instance.initPaymentSheet(
 );
 await Stripe.instance.presentPaymentSheet(); // throws if cancelled
 
-// Confirming… (only the webhook can confirm)
+// Confirming… (the server checks with Stripe on each poll)
 for (var i = 0; i &lt; 15; i++) {
   final b = (await api.get('/me/bookings/${booking['id']}')).data;
   if (b['status'] == 'confirmed') return showBooked(b);
@@ -892,7 +892,7 @@ const GROUPS = [
     response: [200, { therapistId: TID, sessionMinutes: 50, slots: [{ startsAt: '2026-11-02T22:00:00.000Z', endsAt: '2026-11-02T22:50:00.000Z' }, { startsAt: '2026-11-02T23:00:00.000Z', endsAt: '2026-11-02T23:50:00.000Z' }] }],
     errors: [[404, 'therapist_not_found', ''], [422, 'range_too_long', 'field: to']] },
  ]},
- { id: 'bookings', title: 'Bookings', intro: 'Paid with Stripe. A booking is confirmed only when Stripe\'s webhook reaches the server.', endpoints: [
+ { id: 'bookings', title: 'Bookings', intro: 'Paid with Stripe. A booking is confirmed only when Stripe says the payment succeeded (webhook, or the server checking Stripe).', endpoints: [
   { id: 'create-booking', method: 'POST', path: '/me/bookings', title: 'Book a session', auth: true, idem: true,
     desc: 'Holds the slot as <code>pending</code> for 15 minutes and creates a Stripe PaymentIntent at the server\'s price. Pass <code>payment</code> to PaymentSheet. Booking the same slot again replaces your earlier unpaid hold.',
     params: [['Idempotency-Key', 'header', 'uuid', false, 'Optional for now. Recommended: a retry with the same key can\'t book twice.'], ['therapistId', 'body', 'uuid', true, ''], ['startsAt', 'body', 'ISO date', true, 'The chosen slot: exactly a <code>startsAt</code> from /slots.'], ['focus', 'body', 'string[]', false, 'Up to 5 keys from /focus-areas.'], ['mobile', 'body', 'string', false, 'Australian mobile. Saved to the profile too if it has none.'], ['notes', 'body', 'string', false, 'Max 2000. Private to the user and the therapist.'], ['paymentMethodId', 'body', 'string', false, '<code>pm_…</code> from Stripe\'s <code>createPaymentMethod</code> (own card form). Charged at once; omit to use PaymentSheet.']],

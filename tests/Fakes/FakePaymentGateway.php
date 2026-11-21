@@ -20,6 +20,12 @@ class FakePaymentGateway implements PaymentGateway
 
     public bool $declineNext = false;
 
+    /** @var array<string, string> what Stripe would report for an intent id (default `requires_payment_method`) */
+    public array $statuses = [];
+
+    /** Status returned by createPaymentIntent for a card payment (Stripe returns `succeeded` for most test cards). */
+    public string $cardStatus = 'processing';
+
     public function createPaymentIntent(int $amountCents, string $currency, array $metadata, string $idempotencyKey, ?string $paymentMethodId = null): array
     {
         if ($this->declineNext) {
@@ -43,10 +49,20 @@ class FakePaymentGateway implements PaymentGateway
         $status = match (true) {
             $paymentMethodId === null => 'requires_payment_method',
             str_contains($paymentMethodId, 'threeDSecure') => 'requires_action',
-            default => 'processing',
+            default => $this->cardStatus,
         };
 
         return ['id' => $id, 'clientSecret' => "{$id}_secret_test", 'status' => $status];
+    }
+
+    public function paymentIntentStatus(string $paymentIntentId): string
+    {
+        if ($this->failNext) {
+            $this->failNext = false;
+            throw new ApiException('payment_unavailable', 'We couldn\'t reach the payment service. Please try again.', 502);
+        }
+
+        return $this->statuses[$paymentIntentId] ?? 'requires_payment_method';
     }
 
     public function cancelPaymentIntent(string $paymentIntentId): void

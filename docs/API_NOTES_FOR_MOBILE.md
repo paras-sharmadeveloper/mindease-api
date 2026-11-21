@@ -294,16 +294,16 @@ POST /me/bookings
 
 The booking (and `GET /me/bookings`) now also returns `focus: [{ key, label }]` and `mobile`. The therapist sees both in the web panel. Errors: `422` with `field: focus.0`, `mobile` or `paymentMethodId`, and `402 payment_declined`.
 
-`booking`: `{ id, status, cancelReason, startsAt, endsAt, holdExpiresAt, therapist: { id, name, photoUrl }, priceCents, currency, notes, focus, mobile, payment: { status, amountCents, refundedCents } | null, canCancel, refundIfCancelledCents, joinOpensAt, createdAt }`
+`booking`: `{ id, status, cancelReason, cancelReasonLabel, cancelledAt, startsAt, endsAt, holdExpiresAt, therapist: { id, name, photoUrl }, priceCents, currency, notes, focus, mobile, payment: { status, amountCents, refundedCents } | null, canCancel, refundIfCancelledCents, joinOpensAt, createdAt }`
 
-`status`: `pending` (slot held, awaiting payment) → `confirmed` → `completed` | `no_show`; or `cancelled` (`cancelReason`: `user`, `expired`, `replaced`, `payment_failed`, `therapist`).
+`status`: `pending` (slot held, awaiting payment) → `confirmed` → `completed` | `no_show`; or `cancelled` (`cancelReason`: `user`, `expired`, `replaced`, `payment_failed`, `therapist`). `cancelReasonLabel` is the same reason as a ready-to-show sentence (e.g. "Payment wasn't completed within the hold time, so the slot was released."); show it on a cancelled booking instead of a bare "Cancelled". `cancelledAt` is when it happened (UTC).
 
 **Payment flow.** Use either option:
 - **A. Stripe PaymentSheet (recommended).** Don't send `paymentMethodId`. Present the PaymentSheet with `payment.clientSecret` and `payment.publishableKey`.
 - **B. The app's own card form ("paymentToken").** Create the card with Stripe's SDK (`Stripe.instance.createPaymentMethod(...)` → `pm_…`) and send it as `paymentMethodId`. The server charges it straight away. `payment.status` will be `succeeded` / `processing` (go to step 2), or `requires_action` (3-D Secure: call `Stripe.instance.handleNextAction(payment.clientSecret)`, then go to step 2). A declined card returns `402 payment_declined` with Stripe's message, and the slot is released. Never send raw card numbers to our API.
 
 1. `POST /me/bookings`, then pay with A or B.
-2. When the sheet closes successfully, show "Confirming…" and poll `GET /me/bookings/{id}` every 2 seconds, for up to 30 seconds, until `status` is `confirmed`. The server confirms the booking only when Stripe notifies it; the app can never confirm a booking itself.
+2. When the sheet closes successfully, show "Confirming…" and poll `GET /me/bookings/{id}` every 2 seconds, for up to 30 seconds, until `status` is `confirmed`. Each poll makes the server check the payment with Stripe, so the booking turns `confirmed` as soon as Stripe has the money; the app can never confirm a booking itself. A card charged with `paymentMethodId` that succeeds at once comes back already `confirmed`.
 3. An unpaid booking holds the slot until `holdExpiresAt` (15 minutes), then becomes `cancelled` / `expired`. If the user books the same slot again (for example, after the app was closed mid-payment), the earlier hold is replaced.
 4. The price is always set by the server. Any amount sent by the app is ignored.
 

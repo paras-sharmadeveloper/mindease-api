@@ -279,6 +279,58 @@ class BookingTest extends ApiTestCase
         $this->assertContains(Booking::find($id)->payment->stripe_payment_intent_id, $this->stripe->cancelled);
     }
 
+    /** No webhook: the app cancels a booking that Stripe has already charged. It confirms first, then refunds per the rule. */
+    public function test_cancel_pending_that_was_already_paid_refunds_instead_of_keeping_the_money(): void
+    {
+        $this->signIn();
+        $id = $this->book(self::WED_9AM)->json('booking.id');
+        $this->stripe->statuses[Booking::find($id)->payment->stripe_payment_intent_id] = 'succeeded';
+
+        $this->postJson("/v1/me/bookings/{$id}/cancel")->assertOk()
+            ->assertJsonPath('status', 'cancelled')->assertJsonPath('cancelReason', 'user')
+            ->assertJsonPath('cancelReasonLabel', 'You cancelled this booking.')
+            ->assertJsonPath('payment.status', 'refunded')->assertJsonPath('payment.refundedCents', 15000);
+    }
+
+    /** No webhook: booking the same slot again must not drop a hold that is already paid. */
+    public function test_rebooking_same_slot_keeps_a_paid_hold(): void
+    {
+        $this->signIn();
+        $id = $this->book()->json('booking.id');
+        $this->stripe->statuses[Booking::find($id)->payment->stripe_payment_intent_id] = 'succeeded';
+
+        $this->book()->assertStatus(409)->assertJsonPath('error.code', 'slot_unavailable');
+        $this->assertSame('confirmed', Booking::find($id)->status);
+    }
+
+    /** No webhook, no scheduler: a lapsed hold that was paid late is re-confirmed when the app lists upcoming bookings. */
+    public function test_upcoming_list_reconfirms_a_late_paid_lapsed_hold(): void
+    {
+        $this->signIn();
+        $id = $this->book(self::WED_9AM)->json('booking.id');
+        $this->travel(16)->minutes();
+        $this->artisan('mindease:expire-booking-holds');
+        $this->assertSame('expired', Booking::find($id)->cancel_reason);
+
+        $this->stripe->statuses[Booking::find($id)->payment->stripe_payment_intent_id] = 'succeeded';
+
+        $this->getJson('/v1/me/bookings?scope=upcoming')->assertOk()
+            ->assertJsonPath('0.id', $id)->assertJsonPath('0.status', 'confirmed')->assertJsonPath('0.cancelReasonLabel', null);
+    }
+
+    public function test_cancelled_booking_explains_why(): void
+    {
+        $this->signIn();
+        $id = $this->book()->json('booking.id');
+        $this->travel(16)->minutes();
+        $this->artisan('mindease:expire-booking-holds');
+
+        $this->getJson("/v1/me/bookings/{$id}")
+            ->assertJsonPath('cancelReason', 'expired')
+            ->assertJsonPath('cancelReasonLabel', 'Payment wasn\'t completed within the hold time, so the slot was released.')
+            ->assertJsonPath('cancelledAt', '2026-11-02T00:16:00.000Z');
+    }
+
     public function test_cannot_cancel_after_start(): void
     {
         $this->signIn();
@@ -428,6 +480,43 @@ class BookingTest extends ApiTestCase
         $this->assertSame(0, Booking::where('starts_at', Carbon::parse('2026-11-04T22:00:00Z'))->whereNotNull('slot_lock')->count()); // slot freed
 
         $this->book('2026-11-05T22:00:00.000Z', extra: ['paymentMethodId' => 'tok_visa'])->assertStatus(422)->assertJsonPath('error.field', 'paymentMethodId');
+    }
+
+    public function test_card_that_succeeds_at_once_is_confirmed_without_a_webhook(): void
+    {
+        $this->signIn();
+        $this->stripe->cardStatus = 'succeeded';
+
+        $this->book(extra: ['paymentMethodId' => 'pm_card_visa'])->assertCreated()
+            ->assertJsonPath('payment.status', 'succeeded')
+            ->assertJsonPath('booking.status', 'confirmed');
+    }
+
+    public function test_polling_a_pending_booking_asks_stripe_and_confirms_once_paid(): void
+    {
+        $this->signIn();
+        $id = $this->book()->assertCreated()->json('booking.id');
+        $intent = Booking::findOrFail($id)->payment->stripe_payment_intent_id;
+
+        $this->getJson("/v1/me/bookings/{$id}")->assertJsonPath('status', 'pending'); // Stripe: not paid yet
+
+        $this->stripe->statuses[$intent] = 'succeeded'; // PaymentSheet finished, no webhook arrives
+        $this->getJson("/v1/me/bookings/{$id}")->assertJsonPath('status', 'confirmed');
+        $this->getJson('/v1/me/bookings?scope=upcoming')->assertJsonPath('0.status', 'confirmed');
+    }
+
+    public function test_paid_hold_is_confirmed_instead_of_lapsing_when_no_webhook_came(): void
+    {
+        $this->signIn();
+        $paid = $this->book()->json('booking.id');
+        $unpaid = $this->book(self::WED_9AM)->json('booking.id');
+        $this->stripe->statuses[Booking::findOrFail($paid)->payment->stripe_payment_intent_id] = 'succeeded';
+
+        $this->travel(16)->minutes();
+        $this->artisan('mindease:expire-booking-holds')->assertSuccessful();
+
+        $this->assertSame(Booking::CONFIRMED, Booking::findOrFail($paid)->status);
+        $this->assertSame(Booking::CANCELLED, Booking::findOrFail($unpaid)->status);
     }
 
     public function test_creating_bookings_is_rate_limited(): void

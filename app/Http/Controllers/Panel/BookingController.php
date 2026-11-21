@@ -73,6 +73,30 @@ class BookingController extends PanelController
     }
 
     /**
+     * Check a session's payment with Stripe.
+     *
+     * For a session the client paid for in the app that isn't confirmed (`canCheckPayment: true`): usually because
+     * the Stripe webhook isn't set up, so the hold lapsed. The server asks Stripe directly; nothing is taken on
+     * trust. If Stripe has the money the session is confirmed, or, if someone else took the slot meanwhile, the
+     * client is refunded in full. Returns the session.
+     * `409 payment_not_received` Stripe doesn't have the payment; `409 slot_taken_refunded` paid, but the slot was
+     * taken, so the client got a full refund.
+     */
+    public function checkPayment(Request $request, string $bookingId, BookingService $bookings, PanelPresenter $presenter): JsonResponse
+    {
+        $booking = $bookings->syncPayment($this->visible($request, $bookingId))->load(['user', 'therapist.user', 'payment']);
+
+        if ($booking->status === Booking::CANCELLED && ($booking->payment?->refunded_cents ?? 0) > 0) {
+            throw new ApiException('slot_taken_refunded', 'The client paid, but this time was booked by someone else meanwhile, so they got a full refund.', 409);
+        }
+        if (! in_array($booking->status, [Booking::CONFIRMED, Booking::COMPLETED, Booking::NO_SHOW], true)) {
+            throw new ApiException('payment_not_received', 'Stripe hasn\'t received this payment yet. Try again in a minute.', 409);
+        }
+
+        return response()->json($presenter->booking($booking, $request->user()));
+    }
+
+    /**
      * Delete a cancelled session.
      *
      * Therapist only, and only for `cancelled` sessions (`canDelete: true`): removes it from the therapist's

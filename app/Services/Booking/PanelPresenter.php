@@ -61,6 +61,8 @@ class PanelPresenter
             'id' => $booking->id,
             'status' => $booking->status,
             'cancelReason' => $booking->cancel_reason,
+            'cancelReasonLabel' => BookingPresenter::cancelReasonLabel($booking->cancel_reason, $isTherapist ? 'therapist' : 'admin'),
+            'cancelledAt' => $booking->cancelled_at ? Iso::utc($booking->cancelled_at) : null,
             'startsAt' => Iso::utc($booking->starts_at),
             'endsAt' => Iso::utc($booking->ends_at),
             'client' => ['name' => $booking->user->name, 'email' => $booking->user->email],
@@ -79,6 +81,8 @@ class PanelPresenter
             'canCancel' => $this->bookings->isCancellable($booking),
             'canMarkOutcome' => $this->bookings->canMarkOutcome($booking),
             'canJoin' => $isTherapist && $booking->status === Booking::CONFIRMED,
+            // Paid in the app but not confirmed (no webhook yet): "Check payment" asks Stripe.
+            'canCheckPayment' => $this->bookings->awaitsPayment($booking),
             'canDelete' => $isTherapist && $booking->status === Booking::CANCELLED,
             'joinOpensAt' => $booking->status === Booking::CONFIRMED ? Iso::utc($joinOpensAt) : null,
             'createdAt' => Iso::utc($booking->created_at),

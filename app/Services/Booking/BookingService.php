@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Booking lifecycle. The rules:
- *  - The client never confirms a booking. Only the Stripe webhook (paymentSucceeded) does.
+ *  - The client never confirms a booking. Only paymentSucceeded() does: called by the Stripe webhook, or by
+ *    syncPayment() after the server itself asked Stripe and Stripe said `succeeded` (works without a webhook).
  *  - The amount is decided here from the therapist/config, never from the request.
  *  - A slot is held by `slot_lock` (unique per therapist). Cancelling or lapsing clears it.
  *  - Network calls to Stripe happen outside DB transactions.
@@ -35,6 +36,15 @@ class BookingService
     {
         $config = config('mindease.bookings');
         $released = [];
+
+        // Without a webhook a paid hold can still look `pending`. Ask Stripe about every hold this request may drop
+        // (lapsed ones on this therapist, and the user's own on this slot) before the transaction, so a paid booking
+        // is confirmed instead of being cancelled as `expired` / `replaced`.
+        $therapist->bookings()->where('status', Booking::PENDING)
+            ->where(fn ($q) => $q->where('hold_expires_at', '<=', now())
+                ->orWhere(fn ($q) => $q->where('user_id', $user->id)->where('slot_lock', Booking::slotLock($startsAt))))
+            ->with('payment')->get()
+            ->each(fn (Booking $b) => $this->syncPayment($b));
 
         try {
             // Throwing in here rolls back the hold releases too. That's fine: an expired hold
@@ -112,6 +122,11 @@ class BookingService
             'status' => $intent['status'],
         ]);
 
+        // A card charged at once (paymentMethodId) can already be `succeeded`: confirm now, no need to wait for the webhook.
+        if ($intent['status'] === 'succeeded') {
+            $this->paymentSucceeded($intent['id']);
+        }
+
         return ['booking' => $booking->refresh(), 'clientSecret' => $intent['clientSecret'], 'paymentStatus' => $intent['status']];
     }
 
@@ -121,6 +136,11 @@ class BookingService
      */
     public function cancel(Booking $booking, string $reason = 'user'): Booking
     {
+        if ($booking->status === Booking::PENDING) {
+            // No webhook yet: the money may already be in. Confirm first, so the cancel below refunds it
+            // per the refund rule instead of cancelling a paid booking and keeping the money.
+            $booking = $this->syncPayment($booking);
+        }
         if ($booking->status === Booking::CANCELLED) {
             return $booking;
         }
@@ -212,6 +232,47 @@ class BookingService
         return $booking;
     }
 
+    /**
+     * Whether syncPayment() would ask Stripe about this booking: still waiting for payment, or lapsed while
+     * waiting (the money may have arrived after the hold ran out) and the session hasn't started yet.
+     */
+    public function awaitsPayment(Booking $booking): bool
+    {
+        return $booking->payment !== null && (
+            $booking->status === Booking::PENDING
+            || ($booking->status === Booking::CANCELLED && $booking->cancel_reason === 'expired' && $booking->starts_at->isFuture())
+        );
+    }
+
+    /**
+     * Ask Stripe for the payment's real status and, when it is `succeeded`, confirm the booking exactly as the
+     * webhook would (a lapsed booking is re-confirmed if the slot is still free, otherwise refunded). Works without
+     * a webhook. Stripe being down leaves the booking as it is.
+     */
+    public function syncPayment(Booking $booking): Booking
+    {
+        $booking->loadMissing('payment');
+        $intentId = $booking->payment?->stripe_payment_intent_id;
+
+        if (! $intentId || ! $this->awaitsPayment($booking)) {
+            return $booking;
+        }
+
+        try {
+            $status = $this->payments->paymentIntentStatus($intentId);
+        } catch (ApiException) {
+            return $booking;
+        }
+
+        if ($status === 'succeeded') {
+            $this->paymentSucceeded($intentId);
+        } elseif ($booking->payment->status !== $status) {
+            $booking->payment->update(['status' => $status]);
+        }
+
+        return $booking->refresh()->load(['therapist.user', 'payment']);
+    }
+
     /** Scheduler: lapse unpaid holds so the slot is offered again. Returns how many lapsed. */
     public function expireHolds(): int
     {
@@ -219,6 +280,11 @@ class BookingService
 
         Booking::where('status', Booking::PENDING)->where('hold_expires_at', '<=', now())
             ->with('payment')->each(function (Booking $booking) use (&$count) {
+                // Paid but the webhook never came (or isn't set up): confirm instead of lapsing.
+                if ($this->syncPayment($booking)->status !== Booking::PENDING) {
+                    return;
+                }
+
                 $updated = Booking::whereKey($booking->id)->where('status', Booking::PENDING)->update([
                     'status' => Booking::CANCELLED, 'cancel_reason' => 'expired',
                     'cancelled_at' => now(), 'slot_lock' => null,

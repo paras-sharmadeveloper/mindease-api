@@ -17,6 +17,9 @@ interface PaymentGateway
      */
     public function createPaymentIntent(int $amountCents, string $currency, array $metadata, string $idempotencyKey, ?string $paymentMethodId = null): array;
 
+    /** The intent's current status straight from the provider (`succeeded`, `processing`, `requires_action`, …). */
+    public function paymentIntentStatus(string $paymentIntentId): string;
+
     public function cancelPaymentIntent(string $paymentIntentId): void;
 
     public function refund(string $paymentIntentId, int $amountCents, string $idempotencyKey): void;

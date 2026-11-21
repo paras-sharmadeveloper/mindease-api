@@ -37,6 +37,34 @@ class BookingPresenter
         return array_map(fn (string $k) => ['key' => $k, 'label' => $labels[$k] ?? ucfirst(str_replace('_', ' ', $k))], array_values($keys));
     }
 
+    /**
+     * Plain-English cancel reason. $for: 'client' (the app) or 'therapist' / 'admin' (the panel).
+     * Unknown codes fall back to a generic line so a new reason never shows as blank.
+     */
+    public static function cancelReasonLabel(?string $reason, string $for = 'client'): ?string
+    {
+        if ($reason === null) {
+            return null;
+        }
+
+        $client = $for === 'client';
+
+        return match ($reason) {
+            'user' => $client ? 'You cancelled this booking.' : 'Cancelled by the client in the app.',
+            'therapist' => $client ? 'Your therapist cancelled this session.' : ($for === 'therapist' ? 'Cancelled by you.' : 'Cancelled by the therapist.'),
+            'expired' => $client
+                ? 'Payment wasn\'t completed within the hold time, so the slot was released.'
+                : 'Payment wasn\'t confirmed before the 15-minute hold ran out, so the slot was released.',
+            'replaced' => $client
+                ? 'Replaced by a newer booking for the same time.'
+                : 'Replaced: the client started a new booking for the same slot, so this one was dropped.',
+            'payment_failed' => $client
+                ? 'The payment couldn\'t be started, so nothing was booked.'
+                : 'Stripe payment couldn\'t be created (card declined or payment service error).',
+            default => 'Cancelled ('.$reason.').',
+        };
+    }
+
     /** Only ever returned to the booking's owner (notes are sensitive). */
     public function booking(Booking $booking): array
     {
@@ -47,6 +75,8 @@ class BookingPresenter
             'id' => $booking->id,
             'status' => $booking->status,
             'cancelReason' => $booking->cancel_reason,
+            'cancelReasonLabel' => self::cancelReasonLabel($booking->cancel_reason),
+            'cancelledAt' => $booking->cancelled_at ? Iso::utc($booking->cancelled_at) : null,
             'startsAt' => Iso::utc($booking->starts_at),
             'endsAt' => Iso::utc($booking->ends_at),
             'holdExpiresAt' => $booking->status === Booking::PENDING ? Iso::utc($booking->hold_expires_at) : null,
