@@ -396,7 +396,16 @@ class BookingTest extends ApiTestCase
         $this->assertSame($id, $claims['tpc']);
         $this->assertSame(0, $claims['role_type']);
         $this->assertSame(str_replace('-', '', $user->id), $claims['user_identity']);
+        $this->assertSame($claims['user_identity'], $claims['user_key']);
         $this->assertSame(Carbon::parse('2026-11-02T23:05:00Z')->getTimestamp(), $claims['exp']); // end + 15 min
+
+        // Joining late: Zoom rejects exp < iat + 30 min, so the token outlives the session end.
+        $this->travelTo(Carbon::parse('2026-11-02T22:45:00Z')); // 5 min before end
+        $late = $this->postJson("/v1/me/bookings/{$id}/video-token")->assertOk()->json('token');
+        JWT::$timestamp = Carbon::now()->getTimestamp();
+        $claims = (array) JWT::decode($late, new Key('zoom_secret_that_is_long_enough_for_hs256', 'HS256'));
+        JWT::$timestamp = null;
+        $this->assertGreaterThanOrEqual(1800, $claims['exp'] - $claims['iat']);
 
         $this->travelTo(Carbon::parse('2026-11-02T22:51:00Z')); // after end
         $this->postJson("/v1/me/bookings/{$id}/video-token")->assertStatus(409);

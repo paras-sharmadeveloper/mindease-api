@@ -37,9 +37,10 @@ class ZoomVideoToken
             throw new ApiException('join_window_closed', 'You can join from '.config('mindease.bookings.join_opens_minutes_before').' minutes before the session until it ends.', 409);
         }
 
-        // Zoom: exp at most 48h after iat; user_identity at most 35 chars.
+        // Zoom: exp must be 30 min to 48 h after iat (a token for a late join near the end would otherwise be
+        // rejected); user_key at most 36 chars.
         $iat = $now->subSeconds(30); // clock skew
-        $exp = $endsAt->addMinutes(15)->min($iat->addHours(48));
+        $exp = $endsAt->addMinutes(15)->max($iat->addMinutes(31))->min($iat->addHours(48));
         $identity = str_replace('-', '', $user->id);
 
         $token = JWT::encode([
@@ -47,7 +48,8 @@ class ZoomVideoToken
             'role_type' => $host ? 1 : 0,
             'tpc' => $booking->id,
             'version' => 1,
-            'user_identity' => $identity,
+            'user_key' => $identity,      // current name
+            'user_identity' => $identity, // older SDK builds read this one
             'iat' => $iat->getTimestamp(),
             'exp' => $exp->getTimestamp(),
         ], $secret, 'HS256');
