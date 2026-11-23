@@ -141,8 +141,30 @@ class BookingController extends Controller
     /**
      * Get a video call token.
      *
-     * Zoom Video SDK token to join the session in the app. Confirmed bookings only, from
-     * a few minutes before the start until the end. Returns { token, sessionName, userIdentity, role, expiresAt }.
+     * Returns a ready-to-use **Zoom Video SDK JWT** for `flutter_zoom_videosdk`. The server creates and signs it;
+     * the app never creates a JWT and never holds the Zoom SDK key or secret.
+     *
+     * **When:** only for a `confirmed` booking, from `joinOpensAt` (10 minutes before `startsAt`) until `endsAt`.
+     * Show the "Join" button only in that window.
+     *
+     * **How to join:**
+     * 1. Ask for camera and microphone permission.
+     * 2. Call this endpoint (no body) right before joining.
+     * 3. Call `zoom.joinSession(...)` with `sessionName` (use it exactly as returned), `token`, the user's display
+     *    name as `userName`, and an empty session password.
+     *
+     * **Rules:**
+     * - Request a **new token for every join and rejoin**; don't store it. It is valid until 15 minutes after
+     *   `endsAt` (at least 30 minutes from issue).
+     * - Don't use a token or keys from any other Zoom account: the user would land in a different session and the
+     *   therapist would never see them.
+     * - The client is always `participant`; the therapist joins from the web panel as host. The client may join
+     *   first.
+     * - Sessions are not recorded.
+     * - After the call, the booking becomes `completed` if both the client and the therapist joined.
+     *
+     * **Errors:** `404` not this user's booking · `409 booking_not_confirmed` · `409 join_window_closed` (too early
+     * or ended; show `error.message`) · `429 rate_limited` (more than 10 a minute) · `503 video_unavailable`.
      */
     public function videoToken(Request $request, string $bookingId, ZoomVideoToken $zoom): JsonResponse
     {

@@ -639,15 +639,22 @@ showStillConfirming(); // check My Bookings later</pre></div>
       <ol class="steps">
         <li>Show <b>Join</b> when <code>now ≥ joinOpensAt</code> (10 minutes before the start) and <code>now &lt; endsAt</code>, and only for <code>confirmed</code> bookings.</li>
         <li>Ask for camera and microphone permission with <code>permission_handler</code>. If the user refuses, explain why and link to Settings.</li>
-        <li>Call <code>POST /me/bookings/{id}/video-token</code> and join with <code>flutter_zoom_videosdk</code> using <code>sessionName</code>, <code>token</code> and <code>userIdentity</code>.</li>
-        <li><b>Request a new token every time</b> the user joins or reconnects, and don't store it. The SDK key and secret stay on the server.</li>
+        <li>Call <code>POST /me/bookings/{id}/video-token</code> (no body). <b>The server creates and signs the Zoom JWT</b> and returns it as <code>token</code>.</li>
+        <li>Join with <code>flutter_zoom_videosdk</code>: <code>sessionName</code> exactly as returned, <code>token</code>, the user's display name as <code>userName</code>, and an empty session password.</li>
+        <li><b>Request a new token every time</b> the user joins or reconnects, and don't store it. It is valid until 15 minutes after <code>endsAt</code>.</li>
+        <li><b>Never put the Zoom SDK key or secret in the app</b>, and never create a JWT in the app. A token from another Zoom account puts the user in a different session, so the therapist never sees them.</li>
+        <li>The client may join before the therapist: show <i>Waiting for your therapist…</i>. The therapist joins from the web panel as host. Sessions are not recorded.</li>
         <li>For reconnects, listen for <code>onSessionLeave</code> and the connection events. Show <i>Reconnecting…</i> and join again with a new token while <code>now &lt; endsAt</code>.</li>
+        <li>After the call, the booking becomes <code>completed</code> if both the client and the therapist joined. Refresh with <code>GET /me/bookings/{id}</code>; the app does nothing for this.</li>
       </ol>
       <div class="tbl-wrap"><table>
         <tr><th>Error</th><th>What to do</th></tr>
+        <tr><td><code>404 not_found</code></td><td>Not this user's booking.</td></tr>
         <tr><td><code>409 booking_not_confirmed</code></td><td>The booking isn't paid or confirmed yet.</td></tr>
         <tr><td><code>409 join_window_closed</code></td><td>It's too early or the session has ended. Show the time it opens.</td></tr>
+        <tr><td><code>429 rate_limited</code></td><td>More than 10 token requests a minute. Wait <code>Retry-After</code> seconds.</td></tr>
         <tr><td><code>503 video_unavailable</code></td><td>Video isn't set up on this server. Try again later.</td></tr>
+        <tr><td>Zoom rejects the join</td><td>Request a new token once and retry. If it fails again, show an error and report the time and booking id.</td></tr>
       </table></div>
     </div>
     <div class="code-col">
@@ -656,7 +663,8 @@ showStillConfirming(); // check My Bookings later</pre></div>
 await zoom.joinSession(JoinSessionConfig(
   sessionName: t['sessionName'],
   token: t['token'],
-  userName: t['userIdentity'],
+  userName: me.preferredName ?? me.firstName, // display name, not userIdentity
+  sessionPassword: '',
   audioOptions: {'connect': true, 'mute': false},
   videoOptions: {'localVideoOn': true},
   sessionIdleTimeoutMins: 10,
@@ -909,10 +917,10 @@ const GROUPS = [
     response: [200, Object.assign({}, BOOKING, { status: 'cancelled', cancelReason: 'user', canCancel: false, refundIfCancelledCents: 0, payment: { status: 'refunded', amountCents: 15000, refundedCents: 15000 } })],
     errors: [[409, 'booking_not_cancellable', '']] },
   { id: 'video-token', method: 'POST', path: '/me/bookings/{bookingId}/video-token', title: 'Get a video call token', auth: true,
-    desc: 'A short-lived Zoom Video SDK JWT for <code>flutter_zoom_videosdk</code>. Only for confirmed bookings, from <code>joinOpensAt</code> until <code>endsAt</code>. Get a new one each time the user joins.',
+    desc: 'Returns a ready-to-use Zoom Video SDK JWT (signed by the server) for <code>flutter_zoom_videosdk</code>. Join with <code>sessionName</code> exactly as returned and <code>token</code>. Only for confirmed bookings, from <code>joinOpensAt</code> until <code>endsAt</code>. Get a new one each time the user joins or rejoins; never store it, and never put Zoom keys in the app. See the video guide.',
     params: [['bookingId', 'path', 'uuid', true, '']], sample: { bookingId: BID },
-    response: [200, { token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…', sessionName: BID, userIdentity: USER.id, role: 'participant', expiresAt: '2026-11-02T22:50:00.000Z' }],
-    errors: [[409, 'booking_not_confirmed', ''], [409, 'join_window_closed', ''], [503, 'video_unavailable', '']] },
+    response: [200, { token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…', sessionName: BID, userIdentity: USER.id.replace(/-/g, ''), role: 'participant', expiresAt: '2026-11-02T23:05:00.000Z' }],
+    errors: [[404, 'not_found', ''], [409, 'booking_not_confirmed', ''], [409, 'join_window_closed', ''], [429, 'rate_limited', ''], [503, 'video_unavailable', '']] },
  ]},
 ];
 
