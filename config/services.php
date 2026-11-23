@@ -39,6 +39,8 @@ return [
     'zoom' => [
         'sdk_key' => env('ZOOM_VIDEO_SDK_KEY'),
         'sdk_secret' => env('ZOOM_VIDEO_SDK_SECRET'),
+        // Secret Token of the Video SDK app's event subscription (verifies POST /v1/webhooks/zoom-video).
+        'webhook_secret' => env('ZOOM_WEBHOOK_SECRET_TOKEN'),
     ],
 
     'slack' => [

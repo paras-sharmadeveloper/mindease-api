@@ -68,6 +68,9 @@ class AppServiceProvider extends ServiceProvider
             Limit::perHour(20)->by('booking-hour:'.($request->user()?->id ?: $request->ip())),
         ]);
 
+        // Video tokens: a join or rejoin needs one; more than this is a loop or abuse.
+        RateLimiter::for('video-token', fn (Request $request) => Limit::perMinute(10)->by('video:'.($request->user()?->id ?: $request->ip())));
+
         RateLimiter::for('auth-general', fn (Request $request) => Limit::perMinute(30)->by('auth:'.$request->ip()));
 
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(180)->by($request->user()?->id ?: $request->ip()));

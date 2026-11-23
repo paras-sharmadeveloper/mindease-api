@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\TherapistController;
 use App\Http\Controllers\Panel;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
+use App\Http\Controllers\Webhooks\ZoomVideoWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,6 +33,7 @@ Route::prefix('auth')->group(function () {
 
 // ---- Webhooks (no bearer token; verified by signature) --------------------------------
 Route::post('webhooks/stripe', StripeWebhookController::class);
+Route::post('webhooks/zoom-video', ZoomVideoWebhookController::class);
 
 // ---- Everything else needs Authorization: Bearer <access token> ------------------------
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
@@ -75,7 +77,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('me/bookings', [BookingController::class, 'index']);
     Route::get('me/bookings/{bookingId}', [BookingController::class, 'show']);
     Route::post('me/bookings/{bookingId}/cancel', [BookingController::class, 'cancel']);
-    Route::post('me/bookings/{bookingId}/video-token', [BookingController::class, 'videoToken']);
+    Route::post('me/bookings/{bookingId}/video-token', [BookingController::class, 'videoToken'])->middleware('throttle:video-token');
 });
 
 // ---- Web panel (therapists + admins). Same tokens as the app; role-gated. ----------------
@@ -97,7 +99,7 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'role:admin,therapist'])->pre
     Route::delete('bookings/{bookingId}', [Panel\BookingController::class, 'destroy']);
     Route::post('bookings/{bookingId}/check-payment', [Panel\BookingController::class, 'checkPayment']);
     Route::post('bookings/{bookingId}/outcome', [Panel\BookingController::class, 'outcome']);
-    Route::post('bookings/{bookingId}/video-token', [Panel\BookingController::class, 'videoToken']);
+    Route::post('bookings/{bookingId}/video-token', [Panel\BookingController::class, 'videoToken'])->middleware('throttle:video-token');
 
     Route::middleware('role:admin')->group(function () {
         Route::get('therapists', [Panel\TherapistController::class, 'index']);

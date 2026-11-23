@@ -84,6 +84,14 @@ class PanelPresenter
             // Paid in the app but not confirmed (no webhook yet): "Check payment" asks Stripe.
             'canCheckPayment' => $this->bookings->awaitsPayment($booking),
             'canDelete' => $isTherapist && $booking->status === Booking::CANCELLED,
+            // From the Zoom webhook: whether each side joined and how long the call ran. Null until a call happens.
+            'video' => $booking->video_started_at ? [
+                'startedAt' => Iso::utc($booking->video_started_at),
+                'endedAt' => $booking->video_ended_at ? Iso::utc($booking->video_ended_at) : null,
+                'durationSeconds' => $booking->video_duration_seconds,
+                'clientJoined' => $booking->client_joined_at !== null,
+                'therapistJoined' => $booking->therapist_joined_at !== null,
+            ] : null,
             'joinOpensAt' => $booking->status === Booking::CONFIRMED ? Iso::utc($joinOpensAt) : null,
             'createdAt' => Iso::utc($booking->created_at),
         ];

@@ -340,12 +340,14 @@ Sessions run on the **Zoom Video SDK** (`flutter_zoom_videosdk`), not Zoom Meeti
    - `userName` → the user's display name (for example their preferred or first name)
    - session password: leave empty
 5. Audio and video go directly between the app and Zoom. Our API is not involved after the token is issued.
+6. After the call, Zoom tells our server when the call started and ended and who joined. If both the client and the therapist joined, the booking becomes `completed` shortly after the call ends; refresh with `GET /me/bookings/{id}`. Nothing is needed from the app for this.
 
 **Rules for the app**
 
 - **Never put the Zoom SDK Key or SDK Secret in the app**, and never generate the JWT in the app. Remove any key, secret or test token added during development. The keys live only on our server.
 - **Use only the token from our API.** A token from a different Zoom account (for example a personal test account) puts the user in a different session, and the therapist will never see them.
 - **Do not cache or store the token.** Request a new one for every join or rejoin. A token is valid until 15 minutes after `endsAt` (and for at least 30 minutes from when it was issued, as Zoom requires).
+- **Initialise the Zoom SDK once** at app start (or before the first call), not on every join.
 - **Ask for camera and microphone permission** before joining, and handle a refusal (the user can still join with audio or video off).
 - The client can join before the therapist; show "Waiting for your therapist to join" until the host arrives.
 - Sessions are **not recorded**. Do not turn on cloud or local recording.
@@ -358,6 +360,7 @@ Sessions run on the **Zoom Video SDK** (`flutter_zoom_videosdk`), not Zoom Meeti
 | 409 | `booking_not_confirmed` | Booking isn't paid/confirmed | "This session isn't confirmed yet." |
 | 409 | `join_window_closed` | Too early or the session has ended | The API's `error.message` (it states when joining opens) |
 | 503 | `video_unavailable` | Video is not configured on the server | "Video sessions aren't available right now. Please try again later." |
+| 429 | `rate_limited` | More than 10 token requests a minute | Wait `Retry-After` seconds; this only happens if the app requests tokens in a loop |
 
 If Zoom itself rejects the join (invalid token or signature), request a new token once and try again. If it fails again, show a generic error and let the user retry; please report it to the backend team with the time and booking id.
 

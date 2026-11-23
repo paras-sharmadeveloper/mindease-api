@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Support\Iso;
 use Carbon\CarbonImmutable;
 use Firebase\JWT\JWT;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Short-lived Zoom Video SDK JWT (HS256, signed with the SDK secret). Session name = booking id.
@@ -53,6 +54,9 @@ class ZoomVideoToken
             'iat' => $iat->getTimestamp(),
             'exp' => $exp->getTimestamp(),
         ], $secret, 'HS256');
+
+        // Who got a token for which session. Never the token or the secret.
+        Log::info('zoom.video_token_issued', ['booking_id' => $booking->id, 'user_id' => $user->id, 'role' => $host ? 'host' : 'participant']);
 
         return [
             'token' => $token,
